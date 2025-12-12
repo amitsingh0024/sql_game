@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reality Patch: SQL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jersey+10&family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'neon-cyan': '#00f3ff',
+              'neon-pink': '#ff00ff',
+              'neon-yellow': '#faff00',
+              'neon-purple': '#bc13fe',
+              'void-dark': '#050508',
+              'void-panel': '#0a0a12',
+            },
+            fontFamily: {
+              'display': ['"Orbitron"', 'sans-serif'],
+              'mono': ['"Share Tech Mono"', 'monospace'],
+              'glitch': ['"Jersey 10"', 'sans-serif'],
+            },
+            animation: {
+              'glitch-skew': 'glitch-skew 1s infinite linear alternate-reverse',
+              'float': 'float 6s ease-in-out infinite',
+              'pulse-fast': 'pulse 0.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            },
+            keyframes: {
+              'glitch-skew': {
+                '0%': { transform: 'skew(0deg)' },
+                '20%': { transform: 'skew(-2deg)' },
+                '40%': { transform: 'skew(2deg)' },
+                '60%': { transform: 'skew(0deg)' },
+                '80%': { transform: 'skew(1deg)' },
+                '100%': { transform: 'skew(0deg)' },
+              },
+              float: {
+                '0%, 100%': { transform: 'translateY(0)' },
+                '50%': { transform: 'translateY(-20px)' },
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      body {
+        background-color: #050508;
+        color: #ffffff;
+        overflow-x: hidden;
+      }
+      /* Custom Glitch Effect Classes */
+      .glitch-text {
+        position: relative;
+      }
+      .glitch-text::before,
+      .glitch-text::after {
+        content: attr(data-text);
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+      }
+      .glitch-text::before {
+        left: 2px;
+        text-shadow: -1px 0 #ff00ff;
+        clip: rect(44px, 450px, 56px, 0);
+        animation: glitch-anim 5s infinite linear alternate-reverse;
+      }
+      .glitch-text::after {
+        left: -2px;
+        text-shadow: -1px 0 #00f3ff;
+        clip: rect(44px, 450px, 56px, 0);
+        animation: glitch-anim2 5s infinite linear alternate-reverse;
+      }
+      @keyframes glitch-anim {
+        0% { clip: rect(38px, 9999px, 86px, 0); }
+        20% { clip: rect(10px, 9999px, 90px, 0); }
+        40% { clip: rect(6px, 9999px, 12px, 0); }
+        60% { clip: rect(78px, 9999px, 5px, 0); }
+        80% { clip: rect(20px, 9999px, 60px, 0); }
+        100% { clip: rect(85px, 9999px, 98px, 0); }
+      }
+      @keyframes glitch-anim2 {
+        0% { clip: rect(18px, 9999px, 16px, 0); }
+        20% { clip: rect(60px, 9999px, 20px, 0); }
+        40% { clip: rect(16px, 9999px, 62px, 0); }
+        60% { clip: rect(28px, 9999px, 25px, 0); }
+        80% { clip: rect(90px, 9999px, 10px, 0); }
+        100% { clip: rect(5px, 9999px, 38px, 0); }
+      }
+      
+      /* Grid Background */
+      .cyber-grid {
+        background-image: 
+          linear-gradient(rgba(0, 243, 255, 0.1) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 243, 255, 0.1) 1px, transparent 1px);
+        background-size: 40px 40px;
+        perspective: 500px;
+        transform-style: preserve-3d;
+        animation: grid-move 20s linear infinite;
+      }
+      @keyframes grid-move {
+        0% { transform: translateY(0); }
+        100% { transform: translateY(40px); }
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.33.0"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

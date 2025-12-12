@@ -300,9 +300,9 @@ export const LEVEL_2: LevelData = {
           name: "roles",
           columns: [{name: "id", type: "number"}, {name: "role_name", type: "string"}],
           data: [
-             {id: 101, name: "Miner"},
-             {id: 102, name: "Runner"},
-             {id: 103, name: "Admin"}
+             {id: 101, role_name: "Miner"}, // FIXED: Key matches column definition
+             {id: 102, role_name: "Runner"},
+             {id: 103, role_name: "Admin"}
           ]
         }
       ],
@@ -407,6 +407,265 @@ export const LEVEL_2: LevelData = {
          return data.length === 1 && data[0].name === "Zero" && (data[0].node_name === "Core_Battery" || data[0]['power_nodes.node_name'] === "Core_Battery");
       },
       successMessage: "FATAL ERROR FIXED! The Reaper exploded into a million puzzle pieces.\n\nZERO: 'I can see the threads connecting everything now.'\n\nABILITY UNLOCKED: BRIDGE-MAKER."
+    }
+  ]
+};
+
+export const LEVEL_3: LevelData = {
+  id: 3,
+  title: "MARKETVERSE",
+  description: "Floating islands of chaotic trade. Restore order using GROUP BY and AGGREGATIONS.",
+  theme: ThemeStyle.CYBERPUNK, // Using Cyberpunk style for high-tech market feel
+  missions: [
+    // --- QUEST 1: RESTORE THE MERCHANT CLUSTERS (GROUP BY) ---
+    {
+      id: "Q1_CLUSTERS",
+      title: "RESTORE CLUSTERS",
+      story: "NYX: Look at this mess. The merchant islands are scattering! \nPIXEL: They've lost their grouping tags. We need to identify the natural clusters.\n\nOBJECTIVE: Group the merchants by their 'region' and count how many are in each. This will create gravity wells to pull them back together.",
+      objective: "Group merchants by 'region' and COUNT(*) them.",
+      hint: "Use `SELECT region, COUNT(*) FROM merchants GROUP BY region`.",
+      table: {
+        name: "merchants",
+        columns: [{ name: "id", type: "number" }, { name: "name", type: "string" }, { name: "region", type: "string" }],
+        data: [
+          { id: 1, name: "Vendor_A", region: "North_Dock" },
+          { id: 2, name: "Vendor_B", region: "North_Dock" },
+          { id: 3, name: "Vendor_C", region: "South_Plaza" },
+          { id: 4, name: "Vendor_D", region: "North_Dock" },
+          { id: 5, name: "Vendor_E", region: "South_Plaza" }
+        ]
+      },
+      expectedResult: (data) => {
+        // Should have 2 rows: North_Dock (3) and South_Plaza (2)
+        const north = data.find(d => d.region === "North_Dock");
+        const south = data.find(d => d.region === "South_Plaza");
+        const countKey = Object.keys(data[0]).find(k => k.toUpperCase().includes('COUNT'));
+        return data.length === 2 && north && south && north[countKey!] === 3;
+      },
+      successMessage: "CLUSTERS STABILIZED. Gravity wells active. The islands are drifting back into formation."
+    },
+
+    // --- QUEST 2: MEASURE THE MARKET FLOW (AVG) ---
+    {
+      id: "Q2_FLOW",
+      title: "MEASURE THE FLOW",
+      story: "PIXEL: Math never lies, but the Glitch sure does. It's inflating the prices!\nZERO: I see numbers flying everywhere. \nNYX: Calculate the real average price for each 'item_type'. If we know the true value, we can reset the market.",
+      objective: "Calculate the average price per item type. Use `AVG(price)` and group by 'item_type'.",
+      hint: "Structure: `SELECT item_type, AVG(price) FROM trades GROUP BY item_type`.",
+      table: {
+        name: "trades",
+        columns: [{ name: "id", type: "number" }, { name: "item_type", type: "string" }, { name: "price", type: "number" }],
+        data: [
+          { id: 1, item_type: "Data_Shard", price: 100 },
+          { id: 2, item_type: "Data_Shard", price: 200 },
+          { id: 3, item_type: "Cyber_Deck", price: 1000 },
+          { id: 4, item_type: "Cyber_Deck", price: 2000 }
+        ]
+      },
+      expectedResult: (data) => {
+        // Data_Shard avg 150, Cyber_Deck avg 1500
+        const shard = data.find(d => d.item_type === "Data_Shard");
+        const deck = data.find(d => d.item_type === "Cyber_Deck");
+        const avgKey = Object.keys(data[0]).find(k => k.toUpperCase().includes('AVG'));
+        return shard && deck && shard[avgKey!] === 150 && deck[avgKey!] === 1500;
+      },
+      successMessage: "PRICES RESET. The inflation bubble just popped."
+    },
+
+    // --- QUEST 3: EXPOSE FRAUDULENT FACTIONS (HAVING) ---
+    {
+      id: "Q3_FRAUD",
+      title: "EXPOSE THE FRAUD",
+      story: "NYX: Corruption hides in numbers. Some factions are faking their power levels to intimidate others.\nPIXEL: They are using shell guilds. Real factions have a total power over 500. Anything less is a fake shell.\n\nOBJECTIVE: Sum the 'power' of each 'faction', but only show the ones having a total power greater than 500.",
+      objective: "Find the powerful factions. `GROUP BY faction` and use `HAVING SUM(power) > 500`.",
+      hint: "WHERE filters rows before grouping. HAVING filters groups after aggregation.",
+      table: {
+        name: "guilds",
+        columns: [{ name: "guild_id", type: "number" }, { name: "faction", type: "string" }, { name: "power", type: "number" }],
+        data: [
+          { guild_id: 1, faction: "Iron_Code", power: 300 },
+          { guild_id: 2, faction: "Iron_Code", power: 400 }, // Sum: 700 (Keep)
+          { guild_id: 3, faction: "Ghost_Script", power: 100 },
+          { guild_id: 4, faction: "Ghost_Script", power: 100 } // Sum: 200 (Drop)
+        ]
+      },
+      expectedResult: (data) => {
+        // Only Iron_Code should remain
+        return data.length === 1 && data[0].faction === "Iron_Code";
+      },
+      successMessage: "FRAUD DETECTED. The fake factions are dissolving into static."
+    },
+
+    // --- MINI-BOSS: THE OVER-COUNTER ITERATOR ---
+    {
+      id: "BOSS_ITERATOR",
+      title: "MINI-BOSS: THE ITERATOR",
+      story: "ALERT: GLITCH DETECTED.\n\nIt's The Iterator! It's cloning transaction records to crash the server.\n\nPIXEL: It's duplicating transactions! A real merchant ID should only appear once in this log. \n\nOBJECTIVE: Find the 'merchant_id' that appears more than once! Count them and filter with HAVING > 1.",
+      objective: "Identify the glitch. `SELECT merchant_id, COUNT(*) FROM transaction_log GROUP BY merchant_id HAVING COUNT(*) > 1`.",
+      hint: "Group by the ID, count them, then keep only counts greater than 1.",
+      table: {
+        name: "transaction_log",
+        columns: [{ name: "log_id", type: "number" }, { name: "merchant_id", type: "number" }, { name: "status", type: "string" }],
+        data: [
+          { log_id: 1, merchant_id: 101, status: "Ok" },
+          { log_id: 2, merchant_id: 102, status: "Ok" },
+          { log_id: 3, merchant_id: 103, status: "Ok" },
+          { log_id: 4, merchant_id: 102, status: "Dupe" } // 102 is the target
+        ]
+      },
+      expectedResult: (data) => {
+        return data.length === 1 && data[0].merchant_id === 102;
+      },
+      successMessage: "ITERATOR CRASHED. You just cleaned up a million fake receipts. That's some accountant-level power."
+    },
+
+    // --- FINAL BOSS: THE PROFIT EATER TITAN ---
+    {
+      id: "BOSS_PROFIT_TITAN",
+      title: "FINAL BOSS: PROFIT EATER",
+      story: "WARNING: MASSIVE ENTITY APPROACHING.\n\nThe Profit Eater Titan is made of corrupted financial data. It feeds on negative stability.\n\nZERO: It's... it's huge. It's swirling with bad math.\nNYX: To destroy it, we need to isolate the unstable clusters and collapse them. \n\nOBJECTIVE: Find 'cluster_id's where the SUM of 'stability_index' is NEGATIVE (less than 0). Order them by the sum (lowest first) to hit the weakest point.",
+      objective: "Target the instability! `GROUP BY cluster_id`, `HAVING SUM(stability_index) < 0`, and `ORDER BY SUM(stability_index) ASC`.",
+      hint: "Combine GROUP BY, HAVING, and ORDER BY. Remember the order: GROUP -> HAVING -> ORDER.",
+      table: {
+        name: "market_clusters",
+        columns: [{ name: "id", type: "number" }, { name: "cluster_id", type: "string" }, { name: "stability_index", type: "number" }],
+        data: [
+          { id: 1, cluster_id: "Alpha", stability_index: 100 },
+          { id: 2, cluster_id: "Alpha", stability_index: 50 }, // Sum 150 (Safe)
+          { id: 3, cluster_id: "Beta", stability_index: -200 },
+          { id: 4, cluster_id: "Beta", stability_index: 50 }, // Sum -150 (Target 2)
+          { id: 5, cluster_id: "Gamma", stability_index: -500 }, // Sum -500 (Target 1 - Lowest)
+        ]
+      },
+      expectedResult: (data) => {
+        // Should have Gamma (-500) then Beta (-150)
+        if (data.length !== 2) return false;
+        const sumKey = Object.keys(data[0]).find(k => k.toUpperCase().includes('SUM'));
+        const first = data[0];
+        const second = data[1];
+        return first.cluster_id === "Gamma" && second.cluster_id === "Beta" && first[sumKey!] < second[sumKey!];
+      },
+      successMessage: "TITAN COLLAPSED! \n\nNYX: 'You didn't just fix the market. You understood it.'\n\nABILITY UNLOCKED: BULK PROCESSOR (Level 3 Complete)."
+    }
+  ]
+};
+
+export const LEVEL_4: LevelData = {
+  id: 4,
+  title: "CENSUS CORE",
+  description: "Identity tablets are collapsing. Restore structural integrity using Normalization and Design patterns.",
+  theme: ThemeStyle.BLUEPRINT,
+  missions: [
+    // --- QUEST 1: IDENTITY ANOMALIES (1NF - Atomicity) ---
+    {
+      id: "Q1_ATOMICITY",
+      title: "ATOMICITY BREACH",
+      story: "ZERO: This sphere... it's full of floating glass tablets. \nNYX: This is the Census Core. The blueprint of everyone. But look at these records. \nPIXEL: They're jamming multiple values into one field! 'Skills' should be atomic, not a comma-separated mess. \n\nOBJECTIVE: Find the corrupted records where 'attributes' contains a comma.",
+      objective: "Identify non-atomic data. `SELECT * FROM identity_fragments WHERE attributes LIKE '%,%'`.",
+      hint: "The `%` symbol is a wildcard. `LIKE '%,%'` finds any text containing a comma.",
+      table: {
+        name: "identity_fragments",
+        columns: [{ name: "id", type: "number" }, { name: "citizen", type: "string" }, { name: "attributes", type: "string" }],
+        data: [
+          { id: 1, citizen: "Neo", attributes: "Flying" },
+          { id: 2, citizen: "Trinity", attributes: "Combat,Hacking" }, // Target
+          { id: 3, citizen: "Morpheus", attributes: "Wisdom" },
+          { id: 4, citizen: "Smith", attributes: "Replication,Speed,Strength" } // Target
+        ]
+      },
+      expectedResult: (data) => data.length === 2 && data.some(d => d.citizen === "Trinity"),
+      successMessage: "CLUSTERS SEPARATED. One value per field. That's the First Law of Structure."
+    },
+
+    // --- QUEST 2: PARTIAL DEPENDENCE (2NF) ---
+    {
+      id: "Q2_DEPENDENCY",
+      title: "UNPACK DEPENDENCIES",
+      story: "NYX: These tablets are bloated. They're repeating data unnecessarily.\nPIXEL: The 'job_description' depends only on the 'job', not the specific citizen. We need to split this table to stop the redundancy bleed.\n\nOBJECTIVE: Create a clean list of jobs and their descriptions to prepare for extraction.",
+      objective: "Normalize the data. `SELECT DISTINCT job, job_description FROM workforce`.",
+      hint: "DISTINCT removes duplicates, giving you a clean list of unique job definitions.",
+      table: {
+        name: "workforce",
+        columns: [{ name: "id", type: "number" }, { name: "name", type: "string" }, { name: "job", type: "string" }, { name: "job_description", type: "string" }],
+        data: [
+          { id: 1, name: "A", job: "Coder", job_description: "Writes code" },
+          { id: 2, name: "B", job: "Coder", job_description: "Writes code" }, // Redundant
+          { id: 3, name: "C", job: "Designer", job_description: "Makes art" },
+          { id: 4, name: "D", job: "Designer", job_description: "Makes art" } // Redundant
+        ]
+      },
+      expectedResult: (data) => data.length === 2 && data.some(d => d.job === "Coder"),
+      successMessage: "REDUNDANCY PURGED. We can move these to their own table now."
+    },
+
+    // --- QUEST 3: TRANSITIVE CORRUPTION (3NF) ---
+    {
+      id: "Q3_TRANSITIVE",
+      title: "HIDDEN SHADOWS",
+      story: "ZERO: I see a chain reaction. When a planet changes, the ruler changes too, but they are linked to the citizen record!\nNYX: That's a Transitive Dependency. The 'ruler' depends on 'planet', not the citizen. We need to isolate the planet-ruler relationship.\n\nOBJECTIVE: Extract the unique planet governance rules.",
+      objective: "Break the chain. `SELECT DISTINCT planet, ruler FROM galaxy_census`.",
+      hint: "Find the relationship that doesn't belong to the primary key (the citizen).",
+      table: {
+        name: "galaxy_census",
+        columns: [{ name: "citizen_id", type: "number" }, { name: "planet", type: "string" }, { name: "ruler", type: "string" }],
+        data: [
+          { citizen_id: 1, planet: "Mars", ruler: "Elon_X" },
+          { citizen_id: 2, planet: "Mars", ruler: "Elon_X" },
+          { citizen_id: 3, planet: "Venus", ruler: "Queen_V" },
+          { citizen_id: 4, planet: "Venus", ruler: "Queen_V" }
+        ]
+      },
+      expectedResult: (data) => data.length === 2 && data.some(d => d.planet === "Mars"),
+      successMessage: "LINKS SEVERED. The citizens are free from planetary politics."
+    },
+
+    // --- MINI-BOSS: THE REDUNDANCY SWARM ---
+    {
+      id: "BOSS_SWARM",
+      title: "MINI-BOSS: REDUNDANCY SWARM",
+      story: "ALERT: SWARM DETECTED.\n\nA cloud of duplicate identities is attacking! It regrows unless you find the source.\n\nPIXEL: It's duplicating IDs! A primary key MUST be unique. Find the ID that appears more than once!\n\nOBJECTIVE: `SELECT id, COUNT(*) FROM identity_stream GROUP BY id HAVING COUNT(*) > 1`.",
+      objective: "Target the duplicate. Group by ID and find counts > 1.",
+      hint: "Use GROUP BY and HAVING to find duplicates.",
+      table: {
+        name: "identity_stream",
+        columns: [{ name: "row_num", type: "number" }, { name: "id", type: "string" }, { name: "status", type: "string" }],
+        data: [
+          { row_num: 1, id: "USER_01", status: "Active" },
+          { row_num: 2, id: "USER_02", status: "Active" },
+          { row_num: 3, id: "USER_03", status: "Active" },
+          { row_num: 4, id: "USER_02", status: "Corrupted" } // Duplicate ID
+        ]
+      },
+      expectedResult: (data) => data.length === 1 && data[0].id === "USER_02",
+      successMessage: "SWARM DISSOLVED. Unique constraints re-established."
+    },
+
+    // --- FINAL BOSS: THE ANOMALY KING ---
+    {
+      id: "BOSS_ANOMALY_KING",
+      title: "FINAL BOSS: ANOMALY KING",
+      story: "WARNING: STRUCTURAL COLLAPSE.\n\nThe Anomaly King is a mass of broken schema fragments. He has torn the 'identities' apart from their 'biometrics'.\n\nNYX: We have to rebuild the Master Schema. Reconnect the 'identities' to 'biometrics' and 'records' to form the Complete Citizen.\n\nOBJECTIVE: `SELECT * FROM identities JOIN biometrics ON identities.id = biometrics.user_id JOIN records ON identities.id = records.user_id`.",
+      objective: "Rebuild the Schema. Perform a double JOIN to connect all three tables on the user_id.",
+      hint: "Chain two JOINS. `FROM A JOIN B ON ... JOIN C ON ...`",
+      tables: [
+        {
+          name: "identities",
+          columns: [{ name: "id", type: "number" }, { name: "name", type: "string" }],
+          data: [{ id: 1, name: "Zero" }, { id: 2, name: "Glitch" }]
+        },
+        {
+          name: "biometrics",
+          columns: [{ name: "user_id", type: "number" }, { name: "scan_code", type: "string" }],
+          data: [{ user_id: 1, scan_code: "Z-100" }, { user_id: 2, scan_code: "G-900" }]
+        },
+        {
+          name: "records",
+          columns: [{ name: "user_id", type: "number" }, { name: "rank", type: "string" }],
+          data: [{ user_id: 1, rank: "Weaver" }, { user_id: 2, rank: "Guard" }]
+        }
+      ],
+      expectedResult: (data) => data.length === 2 && Object.keys(data[0]).length >= 4,
+      successMessage: "SCHEMA RESTORED! The Anomaly King has been formatted into oblivion. \n\nZERO: 'I see the blueprint of everything.'\n\nABILITY UNLOCKED: SCHEMA ARCHITECT."
     }
   ]
 };

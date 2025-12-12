@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { LevelData, Mission } from '../../types';
-import { LEVEL_1, LEVEL_2 } from '../../data/levels';
+import { LEVEL_1, LEVEL_2, LEVEL_3, LEVEL_4 } from '../../data/levels';
 import { executeQuery } from '../../utils/sqlEngine';
 import { SqlTerminal } from '../ui/SqlTerminal';
 import { DataGrid } from '../ui/DataGrid';
@@ -118,7 +118,16 @@ const MissionMap: React.FC<{
 
 export const LevelGameplay: React.FC<LevelGameplayProps> = ({ levelId, onExit }) => {
   // Load correct level data
-  const level: LevelData = levelId === 2 ? LEVEL_2 : LEVEL_1;
+  const getLevelData = (id: number) => {
+    switch(id) {
+        case 1: return LEVEL_1;
+        case 2: return LEVEL_2;
+        case 3: return LEVEL_3;
+        case 4: return LEVEL_4;
+        default: return LEVEL_1;
+    }
+  }
+  const level: LevelData = getLevelData(levelId);
 
   const [missionIndex, setMissionIndex] = useState(0);
   const [maxUnlockedIndex, setMaxUnlockedIndex] = useState(0); // Track progress
@@ -202,10 +211,25 @@ export const LevelGameplay: React.FC<LevelGameplayProps> = ({ levelId, onExit })
   };
 
   // Determine styles based on theme
-  const isVaporwave = level.theme === 'VAPORWAVE';
-  const themeAccent = isVaporwave ? 'text-neon-purple' : 'text-neon-cyan';
-  const themeBorder = isVaporwave ? 'border-neon-purple' : 'border-neon-cyan';
-  const themeBg = isVaporwave ? 'bg-neon-purple/10' : 'bg-neon-cyan/10';
+  let themeAccent = 'text-neon-cyan';
+  let themeBorder = 'border-neon-cyan';
+  let themeBg = 'bg-neon-cyan/10';
+
+  if (level.theme === 'VAPORWAVE') {
+      themeAccent = 'text-neon-purple';
+      themeBorder = 'border-neon-purple';
+      themeBg = 'bg-neon-purple/10';
+  } else if (level.theme === 'CYBERPUNK' && levelId === 3) {
+      // Custom theme for Level 3
+      themeAccent = 'text-neon-yellow';
+      themeBorder = 'border-neon-yellow';
+      themeBg = 'bg-neon-yellow/10';
+  } else if (level.theme === 'BLUEPRINT') {
+      // Custom theme for Level 4
+      themeAccent = 'text-blue-400';
+      themeBorder = 'border-blue-400';
+      themeBg = 'bg-blue-400/10';
+  }
 
   return (
     <div className={`relative flex flex-col h-screen w-full bg-void-dark text-white overflow-hidden ${isBoss ? 'border-[4px] border-red-600 animate-pulse' : ''}`}>
@@ -250,7 +274,7 @@ export const LevelGameplay: React.FC<LevelGameplayProps> = ({ levelId, onExit })
            {/* Briefing Card */}
            <div className={`p-5 rounded-lg border shadow-lg ${isBoss ? 'border-red-500/50 bg-red-900/10' : `${themeBorder}/30 ${themeBg.replace('10', '5')}`}`}>
              <h3 className="font-mono text-xs uppercase text-gray-400 mb-3 flex items-center gap-2">
-               <span className={`w-2 h-2 rounded-full ${isBoss ? 'bg-red-500' : isVaporwave ? 'bg-neon-purple' : 'bg-neon-cyan'} animate-pulse`}></span>
+               <span className={`w-2 h-2 rounded-full ${isBoss ? 'bg-red-500' : themeBg.replace('/10', '')} animate-pulse`}></span>
                Mission Briefing
              </h3>
              <div className="font-mono text-white mb-6 text-sm leading-relaxed whitespace-pre-wrap text-gray-200">

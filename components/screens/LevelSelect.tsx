@@ -52,9 +52,9 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({ onBack, onSelectLevel 
                <div className="text-xs text-gray-400 font-mono mb-1">CURRENT RANK</div>
                <div className="text-lg text-white font-bold font-display">NOVICE WEAVER</div>
                <div className="w-full h-1 bg-gray-800 mt-2 rounded-full overflow-hidden">
-                 <div className="w-[10%] h-full bg-neon-cyan" />
+                 <div className="w-[30%] h-full bg-neon-cyan" />
                </div>
-               <div className="text-[10px] text-right text-neon-cyan mt-1">XP: 10/100</div>
+               <div className="text-[10px] text-right text-neon-cyan mt-1">XP: 30/100</div>
             </div>
             <div className="mt-4 text-xs font-mono text-gray-500 italic">
                "Dormant power detected. Complete rifts to awaken."
@@ -151,22 +151,48 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({ onBack, onSelectLevel 
               </HoloButton>
            </div>
            
-           {/* Level 3: Locked */}
-           <div className="bg-void-panel/50 border border-white/5 rounded-lg p-5 relative grayscale opacity-70 cursor-not-allowed">
-              <div className="absolute inset-0 flex items-center justify-center z-20">
-                 <div className="bg-black/80 px-4 py-2 border border-gray-600 rounded font-mono text-xs text-gray-300">
-                   REQUIRES LVL 3 ACCESS
+           {/* Level 3: Marketverse */}
+           <div className="bg-void-panel border border-white/10 rounded-lg p-5 hover:border-neon-yellow transition-all group hover:-translate-y-1">
+              <div className="h-32 mb-4 bg-gray-900 rounded relative overflow-hidden">
+                 <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(250,255,0,0.1),transparent)]" />
+                  {/* Floating Bars Graphic */}
+                 <div className="absolute bottom-2 left-4 w-4 h-10 bg-white/10 group-hover:bg-neon-yellow/50 transition-colors"></div>
+                 <div className="absolute bottom-2 left-10 w-4 h-16 bg-white/10 group-hover:bg-neon-yellow/70 transition-colors"></div>
+                 <div className="absolute bottom-2 left-16 w-4 h-8 bg-white/10 group-hover:bg-neon-yellow/40 transition-colors"></div>
+                 
+                 <div className="absolute center text-4xl text-white/10 font-display font-bold w-full text-center top-8 group-hover:text-neon-yellow/40 transition-colors">
+                   MARKET
                  </div>
               </div>
-              <div className="h-32 mb-4 bg-gray-900 rounded relative overflow-hidden"></div>
-              <h4 className="text-xl font-display text-gray-600">DIMENSION 03</h4>
-              <div className="text-gray-700 font-mono text-xs mb-3">SECTOR: ???</div>
-              <p className="text-sm text-gray-700 mb-4 h-10">
-                Signal lost. Reality collapsed.
+              <h4 className="text-xl font-display text-white group-hover:text-neon-yellow transition-colors">DIMENSION 03</h4>
+              <div className="text-gray-400 font-mono text-xs mb-3">SECTOR: MARKETVERSE</div>
+              <p className="text-sm text-gray-500 mb-4 h-10">
+                Economic collapse. Use <span className="text-neon-yellow">GROUP BY</span> to calculate true totals.
               </p>
-              <div className="w-full py-2 border border-gray-800 text-gray-700 text-center font-mono text-sm uppercase">
-                 LOCKED
+              <HoloButton onClick={() => onSelectLevel(3)} variant="primary" className="w-full text-sm py-2 text-neon-yellow border-neon-yellow hover:bg-neon-yellow hover:text-black">
+                ENTER RIFT
+              </HoloButton>
+           </div>
+
+           {/* Level 4: Census Core */}
+           <div className="bg-void-panel border border-white/10 rounded-lg p-5 hover:border-blue-400 transition-all group hover:-translate-y-1">
+              <div className="h-32 mb-4 bg-gray-900 rounded relative overflow-hidden">
+                 <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_19px,rgba(96,165,250,0.1)_20px),repeating-linear-gradient(90deg,transparent,transparent_19px,rgba(96,165,250,0.1)_20px)]" />
+                 <div className="absolute center text-4xl text-white/10 font-display font-bold w-full text-center top-8 group-hover:text-blue-400/40 transition-colors">
+                   CENSUS
+                 </div>
+                 <div className="absolute center text-4xl text-white/10 font-display font-bold w-full text-center top-12 left-2 group-hover:text-blue-400/40 transition-colors">
+                   CORE
+                 </div>
               </div>
+              <h4 className="text-xl font-display text-white group-hover:text-blue-400 transition-colors">DIMENSION 04</h4>
+              <div className="text-gray-400 font-mono text-xs mb-3">SECTOR: CENSUS CORE</div>
+              <p className="text-sm text-gray-500 mb-4 h-10">
+                Structural failure. Use <span className="text-blue-400">SCHEMA DESIGN</span> to purge redundancy.
+              </p>
+              <HoloButton onClick={() => onSelectLevel(4)} variant="primary" className="w-full text-sm py-2 text-blue-400 border-blue-400 hover:bg-blue-400 hover:text-black">
+                ENTER RIFT
+              </HoloButton>
            </div>
         </div>
       </div>

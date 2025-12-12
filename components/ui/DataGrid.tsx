@@ -18,6 +18,14 @@ export const DataGrid: React.FC<DataGridProps> = ({ data, title, className = '' 
 
   const columns = Object.keys(data[0]);
 
+  const renderValue = (val: any) => {
+    if (val === null || val === undefined || val === 'NULL') {
+      return <span className="text-gray-600 italic text-xs">NULL</span>;
+    }
+    if (typeof val === 'boolean') return val ? 'TRUE' : 'FALSE';
+    return String(val);
+  };
+
   return (
     <div className={`overflow-hidden border border-white/20 rounded bg-void-panel ${className}`}>
       {title && (
@@ -30,7 +38,7 @@ export const DataGrid: React.FC<DataGridProps> = ({ data, title, className = '' 
           <thead>
             <tr className="bg-black/40">
               {columns.map((col) => (
-                <th key={col} className="p-3 font-mono text-xs text-gray-400 border-b border-white/10 uppercase">
+                <th key={col} className="p-3 font-mono text-xs text-gray-400 border-b border-white/10 uppercase whitespace-nowrap">
                   {col}
                 </th>
               ))}
@@ -40,8 +48,8 @@ export const DataGrid: React.FC<DataGridProps> = ({ data, title, className = '' 
             {data.map((row, idx) => (
               <tr key={idx} className="hover:bg-white/5 transition-colors font-mono text-sm text-gray-300 border-b border-white/5 last:border-0">
                 {columns.map((col) => (
-                  <td key={`${idx}-${col}`} className="p-3">
-                    {String(row[col])}
+                  <td key={`${idx}-${col}`} className="p-3 whitespace-nowrap">
+                    {renderValue(row[col])}
                   </td>
                 ))}
               </tr>

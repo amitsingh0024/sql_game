@@ -32,7 +32,8 @@ export interface SquadMember {
 export enum ThemeStyle {
   CYBERPUNK = 'CYBERPUNK',
   VAPORWAVE = 'VAPORWAVE',
-  CARTOON = 'CARTOON'
+  CARTOON = 'CARTOON',
+  BLUEPRINT = 'BLUEPRINT'
 }
 
 // --- NEW GAMEPLAY TYPES ---

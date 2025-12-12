@@ -271,6 +271,136 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({ onBack, onSelectLevel 
                 ENTER RIFT
               </HoloButton>
            </div>
+
+           {/* Level 8: Dragon Machine */}
+           <div className="bg-void-panel border border-white/10 rounded-lg p-5 hover:border-red-500 transition-all group hover:-translate-y-1">
+              <div className="h-32 mb-4 bg-gray-900 rounded relative overflow-hidden">
+                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,rgba(239,68,68,0.3),transparent_80%)]" />
+                 {/* Gear Animation */}
+                 <div className="absolute -right-4 -bottom-4 w-24 h-24 border-4 border-dashed border-red-500/30 rounded-full animate-spin-slow" />
+                 <div className="absolute -left-4 top-4 w-16 h-16 border-4 border-dashed border-red-500/20 rounded-full animate-spin-reverse-slow" />
+                 
+                 <div className="absolute center text-4xl text-white/10 font-display font-bold w-full text-center top-8 group-hover:text-red-500/40 transition-colors">
+                   DRAGON
+                 </div>
+                 <div className="absolute center text-4xl text-white/10 font-display font-bold w-full text-center top-12 left-2 group-hover:text-red-500/40 transition-colors">
+                   ENGINE
+                 </div>
+              </div>
+              <h4 className="text-xl font-display text-white group-hover:text-red-500 transition-colors">DIMENSION 08</h4>
+              <div className="text-gray-400 font-mono text-xs mb-3">SECTOR: DRAGON MACHINE</div>
+              <p className="text-sm text-gray-500 mb-4 h-10">
+                Optimization logic failure. Use <span className="text-red-500">INDEXING</span> to speed up the engine.
+              </p>
+              <HoloButton onClick={() => onSelectLevel(8)} variant="primary" className="w-full text-sm py-2 text-red-500 border-red-500 hover:bg-red-500 hover:text-black">
+                ENTER RIFT
+              </HoloButton>
+           </div>
+
+           {/* Level 9: Underworld Kernel */}
+           <div className="bg-void-panel border border-white/10 rounded-lg p-5 hover:border-orange-500 transition-all group hover:-translate-y-1">
+              <div className="h-32 mb-4 bg-gray-900 rounded relative overflow-hidden">
+                 <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,rgba(249,115,22,0.1)_0px,rgba(249,115,22,0.1)_10px,transparent_10px,transparent_20px)]" />
+                 {/* Kernel Chips */}
+                 <div className="absolute center w-16 h-16 bg-gray-800 border-2 border-orange-500/60 rounded top-8 left-[calc(50%-2rem)] shadow-[0_0_15px_rgba(249,115,22,0.3)]">
+                    <div className="absolute top-1 left-1 w-2 h-2 bg-orange-500/80 rounded-full animate-pulse" />
+                    <div className="absolute bottom-1 right-1 w-2 h-2 bg-orange-500/80 rounded-full animate-pulse delay-75" />
+                 </div>
+                 <div className="absolute center w-24 h-1 bg-orange-500/40 top-16 left-[calc(50%-3rem)]" />
+                 
+                 <div className="absolute center text-4xl text-white/10 font-display font-bold w-full text-center top-8 group-hover:text-orange-500/40 transition-colors">
+                   KERNEL
+                 </div>
+                 <div className="absolute center text-4xl text-white/10 font-display font-bold w-full text-center top-12 left-2 group-hover:text-orange-500/40 transition-colors">
+                   CORE
+                 </div>
+              </div>
+              <h4 className="text-xl font-display text-white group-hover:text-orange-500 transition-colors">DIMENSION 09</h4>
+              <div className="text-gray-400 font-mono text-xs mb-3">SECTOR: UNDERWORLD KERNEL</div>
+              <p className="text-sm text-gray-500 mb-4 h-10">
+                System resources critical. Manage <span className="text-orange-500">MEMORY & CPU</span> to prevent collapse.
+              </p>
+              <HoloButton onClick={() => onSelectLevel(9)} variant="primary" className="w-full text-sm py-2 text-orange-500 border-orange-500 hover:bg-orange-500 hover:text-black">
+                ENTER RIFT
+              </HoloButton>
+           </div>
+
+           {/* Level 10: Shattered Universes */}
+           <div className="bg-void-panel border border-white/10 rounded-lg p-5 hover:border-cyan-200 transition-all group hover:-translate-y-1">
+              <div className="h-32 mb-4 bg-gray-900 rounded relative overflow-hidden">
+                 <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent,rgba(165,243,252,0.2),transparent)]" />
+                 {/* Shard Animation */}
+                 <div className="absolute center w-16 h-16 bg-white/5 border border-cyan-200/50 transform rotate-45 top-6 left-[calc(50%-2rem)] shadow-[0_0_20px_rgba(165,243,252,0.3)] animate-float" />
+                 <div className="absolute center w-10 h-10 bg-white/5 border border-cyan-200/30 transform -rotate-12 top-14 left-[calc(50%-3rem)] animate-float delay-75" />
+                 <div className="absolute center w-8 h-8 bg-white/5 border border-cyan-200/30 transform rotate-12 top-10 left-[calc(50%+1rem)] animate-float delay-150" />
+                 
+                 <div className="absolute center text-4xl text-white/10 font-display font-bold w-full text-center top-8 group-hover:text-cyan-200/40 transition-colors">
+                   SHATTERED
+                 </div>
+                 <div className="absolute center text-4xl text-white/10 font-display font-bold w-full text-center top-12 left-2 group-hover:text-cyan-200/40 transition-colors">
+                   REALMS
+                 </div>
+              </div>
+              <h4 className="text-xl font-display text-white group-hover:text-cyan-200 transition-colors">DIMENSION 10</h4>
+              <div className="text-gray-400 font-mono text-xs mb-3">SECTOR: SHATTERED UNIVERSES</div>
+              <p className="text-sm text-gray-500 mb-4 h-10">
+                Realms are split. Use <span className="text-cyan-200">SHARDING</span> and <span className="text-cyan-200">REPLICATION</span> to unite them.
+              </p>
+              <HoloButton onClick={() => onSelectLevel(10)} variant="primary" className="w-full text-sm py-2 text-cyan-200 border-cyan-200 hover:bg-cyan-200 hover:text-black">
+                ENTER RIFT
+              </HoloButton>
+           </div>
+           
+           {/* Level 11: Glitchverse Core */}
+           <div className="bg-void-panel border border-white/10 rounded-lg p-5 hover:border-white transition-all group hover:-translate-y-1">
+              <div className="h-32 mb-4 bg-gray-900 rounded relative overflow-hidden">
+                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.2),transparent_70%)]" />
+                 {/* Core Animation */}
+                 <div className="absolute center w-20 h-20 bg-white/10 rounded-full top-6 left-[calc(50%-2.5rem)] animate-pulse shadow-[0_0_30px_rgba(255,255,255,0.4)]" />
+                 <div className="absolute center w-full h-full border-t border-b border-white/10 animate-spin-slow" />
+                 
+                 <div className="absolute center text-4xl text-white/20 font-display font-bold w-full text-center top-8 group-hover:text-white/60 transition-colors">
+                   GLITCH
+                 </div>
+                 <div className="absolute center text-4xl text-white/20 font-display font-bold w-full text-center top-12 left-2 group-hover:text-white/60 transition-colors">
+                   CORE
+                 </div>
+              </div>
+              <h4 className="text-xl font-display text-white group-hover:text-gray-200 transition-colors">DIMENSION 11</h4>
+              <div className="text-gray-400 font-mono text-xs mb-3">SECTOR: THE SOURCE</div>
+              <p className="text-sm text-gray-500 mb-4 h-10">
+                The final challenge. Unite all truth to become the <span className="text-white font-bold">ARCHITECT</span>.
+              </p>
+              <HoloButton onClick={() => onSelectLevel(11)} variant="primary" className="w-full text-sm py-2 text-white border-white hover:bg-white hover:text-black shadow-[0_0_15px_rgba(255,255,255,0.2)]">
+                ENTER CORE
+              </HoloButton>
+           </div>
+
+           {/* Level 12: Architect's Hall */}
+           <div className="bg-void-panel border border-white/10 rounded-lg p-5 hover:border-yellow-200 transition-all group hover:-translate-y-1">
+              <div className="h-32 mb-4 bg-white/5 rounded relative overflow-hidden">
+                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.3),transparent)]" />
+                 {/* Architect Geometry */}
+                 <div className="absolute center w-16 h-16 border-2 border-white/60 transform rotate-45 top-8 left-[calc(50%-2rem)] shadow-[0_0_40px_rgba(255,255,255,0.5)] animate-float" />
+                 <div className="absolute center w-12 h-12 border border-white/40 transform -rotate-12 top-10 left-[calc(50%-1.5rem)] animate-float delay-100" />
+                 
+                 <div className="absolute center text-4xl text-white/20 font-display font-bold w-full text-center top-8 group-hover:text-white/80 transition-colors">
+                   ARCHITECT
+                 </div>
+                 <div className="absolute center text-4xl text-white/20 font-display font-bold w-full text-center top-12 left-2 group-hover:text-white/80 transition-colors">
+                   HALL
+                 </div>
+              </div>
+              <h4 className="text-xl font-display text-white group-hover:text-yellow-100 transition-colors">DIMENSION 12</h4>
+              <div className="text-gray-400 font-mono text-xs mb-3">SECTOR: CREATION HALL</div>
+              <p className="text-sm text-gray-500 mb-4 h-10">
+                The end is the beginning. Rewrite reality from scratch.
+              </p>
+              <HoloButton onClick={() => onSelectLevel(12)} variant="primary" className="w-full text-sm py-2 text-yellow-100 border-white hover:bg-white hover:text-black shadow-[0_0_15px_rgba(255,255,255,0.3)]">
+                ASCEND
+              </HoloButton>
+           </div>
+
         </div>
       </div>
     </div>

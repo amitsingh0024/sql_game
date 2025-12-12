@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { LevelData, Mission } from '../../types';
-import { LEVEL_1, LEVEL_2, LEVEL_3, LEVEL_4, LEVEL_5, LEVEL_6, LEVEL_7 } from '../../data/levels';
+import { LEVEL_1, LEVEL_2, LEVEL_3, LEVEL_4, LEVEL_5, LEVEL_6, LEVEL_7, LEVEL_8, LEVEL_9, LEVEL_10, LEVEL_11, LEVEL_12 } from '../../data/levels';
 import { executeQuery } from '../../utils/sqlEngine';
 import { SqlTerminal } from '../ui/SqlTerminal';
 import { DataGrid } from '../ui/DataGrid';
@@ -127,6 +127,11 @@ export const LevelGameplay: React.FC<LevelGameplayProps> = ({ levelId, onExit })
         case 5: return LEVEL_5;
         case 6: return LEVEL_6;
         case 7: return LEVEL_7;
+        case 8: return LEVEL_8;
+        case 9: return LEVEL_9;
+        case 10: return LEVEL_10;
+        case 11: return LEVEL_11;
+        case 12: return LEVEL_12;
         default: return LEVEL_1;
     }
   }
@@ -223,30 +228,45 @@ export const LevelGameplay: React.FC<LevelGameplayProps> = ({ levelId, onExit })
       themeBorder = 'border-neon-purple';
       themeBg = 'bg-neon-purple/10';
   } else if (level.theme === 'CYBERPUNK' && levelId === 3) {
-      // Custom theme for Level 3
       themeAccent = 'text-neon-yellow';
       themeBorder = 'border-neon-yellow';
       themeBg = 'bg-neon-yellow/10';
   } else if (level.theme === 'BLUEPRINT') {
-      // Custom theme for Level 4
       themeAccent = 'text-blue-400';
       themeBorder = 'border-blue-400';
       themeBg = 'bg-blue-400/10';
   } else if (level.theme === 'FRACTAL') {
-      // Custom theme for Level 5
       themeAccent = 'text-green-400';
       themeBorder = 'border-green-400';
       themeBg = 'bg-green-400/10';
   } else if (level.theme === 'CHRONO') {
-      // Custom theme for Level 6
       themeAccent = 'text-amber-400';
       themeBorder = 'border-amber-400';
       themeBg = 'bg-amber-400/10';
   } else if (level.theme === 'VAULT') {
-      // Custom theme for Level 7
       themeAccent = 'text-yellow-600';
       themeBorder = 'border-yellow-600';
       themeBg = 'bg-yellow-600/10';
+  } else if (level.theme === 'DRAGON') {
+      themeAccent = 'text-red-500';
+      themeBorder = 'border-red-500';
+      themeBg = 'bg-red-500/10';
+  } else if (level.theme === 'KERNEL') {
+      themeAccent = 'text-orange-500';
+      themeBorder = 'border-orange-500';
+      themeBg = 'bg-orange-500/10';
+  } else if (level.theme === 'SHARD') {
+      themeAccent = 'text-cyan-200';
+      themeBorder = 'border-cyan-200';
+      themeBg = 'bg-cyan-200/10';
+  } else if (level.theme === 'CORE') {
+      themeAccent = 'text-white';
+      themeBorder = 'border-white';
+      themeBg = 'bg-white/10';
+  } else if (level.theme === 'ARCHITECT') {
+      themeAccent = 'text-yellow-100';
+      themeBorder = 'border-yellow-100';
+      themeBg = 'bg-white/20';
   }
 
   return (

@@ -32,7 +32,6 @@ const getRowValue = (row: any, key: string) => {
     if (caseKey) return row[caseKey];
 
     // 3. Suffix match (e.g. asking for "id", finding "table.id" or "alias.id")
-    // This is risky if ambiguous, but okay for this game scope.
     const suffixKey = Object.keys(row).find(k => k.endsWith('.' + key) || k.toLowerCase().endsWith('.' + lowerKey));
     return suffixKey !== undefined ? row[suffixKey] : undefined;
 };
@@ -172,10 +171,10 @@ const processWindowFunctions = (data: any[], selectClause: string): any[] => {
         let orderKey: string | null = null;
         let orderDesc = false;
 
-        const partitionMatch = overPart.match(/PARTITION\s+BY\s+([a-z0-9_.]+)/i); // Added dot for aliases
+        const partitionMatch = overPart.match(/PARTITION\s+BY\s+([a-z0-9_.]+)/i);
         if (partitionMatch) partitionKey = partitionMatch[1];
 
-        const orderMatch = overPart.match(/ORDER\s+BY\s+([a-z0-9_.]+)(\s+(ASC|DESC))?/i); // Added dot
+        const orderMatch = overPart.match(/ORDER\s+BY\s+([a-z0-9_.]+)(\s+(ASC|DESC))?/i);
         if (orderMatch) {
             orderKey = orderMatch[1];
             orderDesc = orderMatch[3]?.toUpperCase() === 'DESC';
@@ -241,7 +240,6 @@ const processWindowFunctions = (data: any[], selectClause: string): any[] => {
 
 // --- HELPER: PARSE TABLE AND ALIAS ---
 const parseTableStr = (str: string) => {
-    // "table" or "table alias" or "table AS alias"
     const parts = str.trim().split(/\s+(?:AS\s+)?/i);
     const name = parts[0];
     const alias = parts.length > 1 ? parts[1] : name;
@@ -269,13 +267,43 @@ export const executeQuery = (query: string, tables: MockTable[]): QueryResult =>
       }
   }
 
+  // UNION Handler
+  // Basic support for "SELECT ... UNION SELECT ..."
+  // Splitting by UNION keyword (case insensitive)
+  if (q.match(/\s+UNION\s+/i)) {
+      const isUnionAll = q.match(/\s+UNION\s+ALL\s+/i);
+      const separator = isUnionAll ? /\s+UNION\s+ALL\s+/i : /\s+UNION\s+/i;
+      const parts = q.split(separator);
+      
+      let combinedData: any[] = [];
+      
+      for (let part of parts) {
+          const result = executeQuery(part.trim(), tables);
+          if (!result.success) return result; // Return error from sub-query
+          if (result.data) combinedData = [...combinedData, ...result.data];
+      }
+
+      // If NOT "UNION ALL", remove duplicates
+      if (!isUnionAll) {
+          const seen = new Set();
+          combinedData = combinedData.filter(row => {
+              const sig = JSON.stringify(row);
+              if (seen.has(sig)) return false;
+              seen.add(sig);
+              return true;
+          });
+      }
+
+      return { success: true, data: combinedData, message: `UNION Query successful. ${combinedData.length} rows retrieved.` };
+  }
+
   if (!q.toLowerCase().startsWith('select')) {
     return { success: false, error: "SYNTAX ERROR: Query must start with SELECT or WITH" };
   }
 
   try {
     // --- 1. PARSE SECTIONS ---
-    const keywordRegex = /\s+(FROM|WHERE|GROUP BY|HAVING|ORDER BY)\s+/gi;
+    const keywordRegex = /\s+(FROM|WHERE|GROUP BY|HAVING|ORDER BY|LIMIT)\s+/gi;
     let match;
     const sections: Record<string, string> = {};
     let lastIndex = 0;
@@ -304,12 +332,11 @@ export const executeQuery = (query: string, tables: MockTable[]): QueryResult =>
     
     if (!mainTable) return { success: false, error: `REFERENCE ERROR: Table '${mainTableDef.name}' not found.` };
 
-    // Flatten Main Table with Alias Prefixes
     let resultData = mainTable.data.map(row => {
         const flatRow: any = { ...row };
         Object.keys(row).forEach(key => {
-            flatRow[`${mainTable.name}.${key}`] = row[key]; // Original Name
-            flatRow[`${mainTableDef.alias}.${key}`] = row[key]; // Alias
+            flatRow[`${mainTable.name}.${key}`] = row[key]; 
+            flatRow[`${mainTableDef.alias}.${key}`] = row[key]; 
         });
         return flatRow;
     });
@@ -335,9 +362,6 @@ export const executeQuery = (query: string, tables: MockTable[]): QueryResult =>
             for (const joinRow of joinTable.data) {
                 const tempRow = { ...mainRow }; 
                 Object.keys(joinRow).forEach(key => {
-                    // We must be careful not to overwrite columns if names collide, unless aliased
-                    // But for simple "row" merging, we just merge.
-                    // The "getRowValue" helper prioritizes alias lookups.
                     tempRow[key] = joinRow[key]; 
                     tempRow[`${joinTable.name}.${key}`] = joinRow[key];
                     tempRow[`${joinTableDef.alias}.${key}`] = joinRow[key];
@@ -351,7 +375,6 @@ export const executeQuery = (query: string, tables: MockTable[]): QueryResult =>
             if (isLeft && !matchFound) {
                 const nullRow = { ...mainRow };
                 joinTable.columns.forEach(col => {
-                    // Set nulls
                     nullRow[col.name] = null;
                     nullRow[`${joinTable.name}.${col.name}`] = null;
                     nullRow[`${joinTableDef.alias}.${col.name}`] = null;
@@ -450,7 +473,15 @@ export const executeQuery = (query: string, tables: MockTable[]): QueryResult =>
         });
     }
 
-    // --- 8. SELECT PROJECTION ---
+    // --- 8. LIMIT (NEW) ---
+    if (sections['LIMIT']) {
+        const limitVal = parseInt(sections['LIMIT'], 10);
+        if (!isNaN(limitVal)) {
+            resultData = resultData.slice(0, limitVal);
+        }
+    }
+
+    // --- 9. SELECT PROJECTION ---
     const selectClause = sections['SELECT'];
     const isDistinct = selectClause.toUpperCase().startsWith('DISTINCT ');
     const columnsStr = isDistinct ? selectClause.substring(9).trim() : selectClause;
@@ -485,7 +516,7 @@ export const executeQuery = (query: string, tables: MockTable[]): QueryResult =>
         });
     }
 
-    // --- 9. DISTINCT ---
+    // --- 10. DISTINCT ---
     if (isDistinct) {
         const seen = new Set();
         resultData = resultData.filter(row => {

@@ -36,7 +36,12 @@ export enum ThemeStyle {
   BLUEPRINT = 'BLUEPRINT',
   FRACTAL = 'FRACTAL',
   CHRONO = 'CHRONO',
-  VAULT = 'VAULT'
+  VAULT = 'VAULT',
+  DRAGON = 'DRAGON',
+  KERNEL = 'KERNEL',
+  SHARD = 'SHARD',
+  CORE = 'CORE',
+  ARCHITECT = 'ARCHITECT'
 }
 
 // --- NEW GAMEPLAY TYPES ---

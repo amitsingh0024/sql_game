@@ -41,7 +41,15 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-void-dark text-white font-sans selection:bg-neon-pink selection:text-white">
+    <div 
+      className="min-h-screen w-full bg-void-dark text-white font-sans selection:bg-neon-pink selection:text-white"
+      style={{ 
+        minHeight: '100vh', 
+        width: '100%', 
+        backgroundColor: '#050508', 
+        color: '#ffffff' 
+      }}
+    >
       <CRTOverlay />
       {renderScreen()}
     </div>

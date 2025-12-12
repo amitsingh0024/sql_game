@@ -1,22 +1,39 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { GlitchText } from '../ui/GlitchText';
 import { HoloButton } from '../ui/HoloButton';
-import { generateSystemStatus } from '../../services/gemini';
 
 interface SplashScreenProps {
   onStart: () => void;
 }
 
-export const SplashScreen: React.FC<SplashScreenProps> = ({ onStart }) => {
-  const [status, setStatus] = useState("INITIALIZING CONNECTION...");
+// Static status messages pool
+const STATUS_MESSAGES = [
+  "MULTIVERSE SYNC: UNSTABLE. MAGIC LEAK DETECTED IN SECTOR 7.",
+  "REALITY ANCHOR FAILURE. INITIATING EMERGENCY PATCH.",
+  "DIMENSIONAL DRIFT ACTIVE. SQL INJECTION REQUIRED.",
+  "CONNECTION ESTABLISHED. REALITY WEAVER PROTOCOL ENGAGED.",
+  "SYSTEM STATUS: CRITICAL. MULTIPLE RIFTS DETECTED.",
+  "INITIALIZING CONNECTION TO GLITCHVERSE CORE..."
+];
 
-  useEffect(() => {
-    // Generate a flavor status text on mount
-    generateSystemStatus().then(setStatus);
-  }, []);
+export const SplashScreen: React.FC<SplashScreenProps> = ({ onStart }) => {
+  // Pick a random status message
+  const status = STATUS_MESSAGES[Math.floor(Math.random() * STATUS_MESSAGES.length)];
 
   return (
-    <div className="relative flex h-screen flex-col items-center justify-center overflow-hidden">
+    <div 
+      className="relative flex h-screen flex-col items-center justify-center overflow-hidden"
+      style={{ 
+        position: 'relative', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        minHeight: '100vh',
+        width: '100%',
+        backgroundColor: '#050508'
+      }}
+    >
       {/* Animated Background Grid */}
       <div className="absolute inset-0 cyber-grid opacity-30" />
       

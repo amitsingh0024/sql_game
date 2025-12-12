@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { HoloButton } from '../ui/HoloButton';
 import { GlitchText } from '../ui/GlitchText';
-import { generateGlitchReport } from '../../services/gemini';
 import { GlitchReport, SquadMember } from '../../types';
 
 interface LevelSelectProps {
@@ -15,12 +14,19 @@ const SQUAD_DATA: SquadMember[] = [
   { name: 'Null', role: 'Data Void', status: 'OFFLINE', avatarColor: 'bg-gray-500' },
 ];
 
-export const LevelSelect: React.FC<LevelSelectProps> = ({ onBack, onSelectLevel }) => {
-  const [activeAnomaly, setActiveAnomaly] = useState<GlitchReport | null>(null);
+// Static glitch report - can be manually updated when deploying missions
+const DEFAULT_GLITCH_REPORT: GlitchReport = {
+  id: "ANOMALY-X99",
+  dimension: "THE NULL VOID",
+  severity: "CRITICAL",
+  technicalFault: "Missing WHERE clause in deletion logic.",
+  manifestation: "Everything in the city is slowly turning into the color beige.",
+  flavor: "It's super boring and literally erasing personalities."
+};
 
-  useEffect(() => {
-    generateGlitchReport().then(setActiveAnomaly);
-  }, []);
+export const LevelSelect: React.FC<LevelSelectProps> = ({ onBack, onSelectLevel }) => {
+  // Use static glitch report - can be updated manually when deploying
+  const [activeAnomaly] = useState<GlitchReport | null>(DEFAULT_GLITCH_REPORT);
 
   return (
     <div className="relative min-h-screen w-full flex flex-col md:flex-row overflow-hidden bg-void-dark">

@@ -23,7 +23,7 @@ const normalize = (val: any) => {
 
 // Helper: Get value from row (Exact, Fuzzy, or Aggregated Key)
 const getRowValue = (row: any, key: string) => {
-    // 1. Exact match (e.g. "SUM(sales)")
+    // 1. Exact match (e.g. "SUM(sales)" or "t1.id")
     if (row.hasOwnProperty(key)) return row[key];
     
     // 2. Case-insensitive match
@@ -31,13 +31,14 @@ const getRowValue = (row: any, key: string) => {
     const caseKey = Object.keys(row).find(k => k.toLowerCase() === lowerKey);
     if (caseKey) return row[caseKey];
 
-    // 3. Suffix match (e.g. asking for "id", finding "table.id")
+    // 3. Suffix match (e.g. asking for "id", finding "table.id" or "alias.id")
+    // This is risky if ambiguous, but okay for this game scope.
     const suffixKey = Object.keys(row).find(k => k.endsWith('.' + key) || k.toLowerCase().endsWith('.' + lowerKey));
     return suffixKey !== undefined ? row[suffixKey] : undefined;
 };
 
 // Evaluate a single condition
-const evaluateCondition = (row: any, condition: string): boolean => {
+const evaluateCondition = (row: any, condition: string, tables: MockTable[]): boolean => {
   const c = condition.trim();
 
   // Handle IS NULL / IS NOT NULL
@@ -51,6 +52,27 @@ const evaluateCondition = (row: any, condition: string): boolean => {
     return op === 'IS NULL' ? isNull : !isNull;
   }
 
+  // Handle IN (SELECT ...) - Subquery
+  const subQueryMatch = c.match(/^(.+?)\s+IN\s*\((SELECT[\s\S]+)\)$/i);
+  if (subQueryMatch) {
+    const col = subQueryMatch[1].trim();
+    const query = subQueryMatch[2].trim();
+    
+    const result = executeQuery(query, tables);
+    
+    if (!result.success || !result.data) return false;
+    
+    const val = getRowValue(row, col);
+    const nVal = normalize(val);
+    
+    const allowedValues = result.data.map(r => {
+        const keys = Object.keys(r);
+        return keys.length > 0 ? normalize(r[keys[0]]) : null;
+    });
+
+    return allowedValues.includes(nVal);
+  }
+
   // Handle LIKE operator
   const likeMatch = c.match(/^(.+?)\s+LIKE\s+(.+)$/i);
   if (likeMatch) {
@@ -61,7 +83,6 @@ const evaluateCondition = (row: any, condition: string): boolean => {
     if (typeof val !== 'string') return false;
 
     // Convert SQL LIKE pattern (%) to Regex (.*)
-    // Escape special regex chars except %
     const escapeRegex = (str: string) => str.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
     const regexBody = '^' + escapeRegex(pattern).replace(/%/g, '.*') + '$';
     const regex = new RegExp(regexBody, 'i'); // Case insensitive LIKE
@@ -70,8 +91,6 @@ const evaluateCondition = (row: any, condition: string): boolean => {
   }
 
   // Handle standard operators
-  // Regex: Group 1 (Left), Group 2 (Op), Group 3 (Right)
-  // We use .+? for non-greedy match on left side to handle function calls like COUNT(*)
   const operatorMatch = c.match(/^(.+?)\s*(=|<>|!=|>|<|>=|<=)\s*(.+)$/);
   if (!operatorMatch) return false;
 
@@ -80,17 +99,12 @@ const evaluateCondition = (row: any, condition: string): boolean => {
   const rightStr = operatorMatch[3].trim();
   
   // Resolve Values
-  // Check if leftStr is a literal
   let leftVal = leftStr.match(/^['"].*['"]$/) || !isNaN(Number(leftStr)) ? leftStr : getRowValue(row, leftStr);
-  
-  // Check if rightStr is a literal
   let rightVal = rightStr.match(/^['"].*['"]$/) || !isNaN(Number(rightStr)) ? rightStr : getRowValue(row, rightStr);
 
-  // Fallback for unresolved columns (treat as string literal if looks like string)
   if (leftVal === undefined) leftVal = leftStr;
   if (rightVal === undefined) rightVal = rightStr;
 
-  // Unquote
   const unquote = (v: any) => {
       if (typeof v === 'string' && v.match(/^['"].*['"]$/)) return v.slice(1, -1);
       return v;
@@ -116,26 +130,19 @@ const evaluateCondition = (row: any, condition: string): boolean => {
 // --- AGGREGATION HELPERS ---
 const calculateAggregate = (func: string, column: string, rows: any[]): number => {
     const cleanCol = column.trim();
-    
-    // COUNT(*) or COUNT(1)
     if (func === 'COUNT') {
         if (cleanCol === '*' || cleanCol === '1') return rows.length;
-        // Count non-null
         return rows.filter(r => {
             const val = getRowValue(r, cleanCol);
             return val !== null && val !== undefined && val !== 'NULL';
         }).length;
     }
-
-    // Extract values for math ops
     const values = rows.map(r => {
         const val = getRowValue(r, cleanCol);
         const num = Number(val);
         return isNaN(num) ? 0 : num;
     });
-
     if (values.length === 0) return 0;
-
     switch (func) {
         case 'SUM': return values.reduce((a, b) => a + b, 0);
         case 'AVG': return values.reduce((a, b) => a + b, 0) / values.length;
@@ -145,11 +152,125 @@ const calculateAggregate = (func: string, column: string, rows: any[]): number =
     }
 };
 
+// --- WINDOW FUNCTION PROCESSOR ---
+const processWindowFunctions = (data: any[], selectClause: string): any[] => {
+    const windowFuncRegex = /([A-Z_]+\(.*?\))\s+OVER\s*\((.*?)\)/gi;
+    let processedData = data.map(d => ({...d}));
+    let match;
+
+    while ((match = windowFuncRegex.exec(selectClause)) !== null) {
+        const fullString = match[0]; 
+        const funcPart = match[1]; 
+        const overPart = match[2]; 
+        
+        const funcMatch = funcPart.match(/^([A-Z_]+)\((.*?)\)$/i);
+        if (!funcMatch) continue;
+        const funcName = funcMatch[1].toUpperCase();
+        const funcArgs = funcMatch[2].trim();
+
+        let partitionKey: string | null = null;
+        let orderKey: string | null = null;
+        let orderDesc = false;
+
+        const partitionMatch = overPart.match(/PARTITION\s+BY\s+([a-z0-9_.]+)/i); // Added dot for aliases
+        if (partitionMatch) partitionKey = partitionMatch[1];
+
+        const orderMatch = overPart.match(/ORDER\s+BY\s+([a-z0-9_.]+)(\s+(ASC|DESC))?/i); // Added dot
+        if (orderMatch) {
+            orderKey = orderMatch[1];
+            orderDesc = orderMatch[3]?.toUpperCase() === 'DESC';
+        }
+
+        const partitions: Record<string, any[]> = {};
+        processedData.forEach((row, index) => {
+            const key = partitionKey ? String(getRowValue(row, partitionKey)) : 'ALL';
+            if (!partitions[key]) partitions[key] = [];
+            partitions[key].push({ row, index }); 
+        });
+
+        Object.values(partitions).forEach(partitionItems => {
+            if (orderKey) {
+                partitionItems.sort((a, b) => {
+                    let valA = getRowValue(a.row, orderKey!);
+                    let valB = getRowValue(b.row, orderKey!);
+                    if (valA < valB) return orderDesc ? 1 : -1;
+                    if (valA > valB) return orderDesc ? -1 : 1;
+                    return 0;
+                });
+            }
+
+            let runningTotal = 0;
+            let currentRank = 1;
+            let denseRank = 1;
+            
+            partitionItems.forEach((item, i) => {
+                const prevItem = i > 0 ? partitionItems[i-1] : null;
+                const nextItem = i < partitionItems.length - 1 ? partitionItems[i+1] : null;
+                
+                let resultVal: any = null;
+                const currentSortVal = orderKey ? getRowValue(item.row, orderKey) : null;
+                const prevSortVal = prevItem && orderKey ? getRowValue(prevItem.row, orderKey) : null;
+
+                if (i > 0 && currentSortVal !== prevSortVal) {
+                    currentRank = i + 1;
+                    denseRank++;
+                }
+
+                switch (funcName) {
+                    case 'ROW_NUMBER': resultVal = i + 1; break;
+                    case 'RANK': resultVal = currentRank; break;
+                    case 'DENSE_RANK': resultVal = denseRank; break;
+                    case 'LAG': resultVal = prevItem ? getRowValue(prevItem.row, funcArgs) : null; break;
+                    case 'LEAD': resultVal = nextItem ? getRowValue(nextItem.row, funcArgs) : null; break;
+                    case 'SUM':
+                        const val = Number(getRowValue(item.row, funcArgs)) || 0;
+                        if (orderKey) { runningTotal += val; resultVal = runningTotal; } 
+                        else { resultVal = partitionItems.reduce((sum, it) => sum + (Number(getRowValue(it.row, funcArgs)) || 0), 0); }
+                        break;
+                    case 'COUNT':
+                         if (orderKey) { resultVal = i + 1; } else { resultVal = partitionItems.length; }
+                         break;
+                    default: resultVal = null;
+                }
+                processedData[item.index][fullString] = resultVal;
+            });
+        });
+    }
+    return processedData;
+};
+
+// --- HELPER: PARSE TABLE AND ALIAS ---
+const parseTableStr = (str: string) => {
+    // "table" or "table alias" or "table AS alias"
+    const parts = str.trim().split(/\s+(?:AS\s+)?/i);
+    const name = parts[0];
+    const alias = parts.length > 1 ? parts[1] : name;
+    return { name, alias };
+};
+
 export const executeQuery = (query: string, tables: MockTable[]): QueryResult => {
   let q = query.replace(/[\r\n\t]+/g, ' ').trim();
   
+  // CTE Handler
+  if (q.toUpperCase().startsWith('WITH')) {
+      const cteMatch = q.match(/^WITH\s+([a-zA-Z0-9_]+)\s+AS\s*\(([\s\S]+?)\)\s*(SELECT[\s\S]+)$/i);
+      if (cteMatch) {
+          const cteName = cteMatch[1];
+          const cteQuery = cteMatch[2];
+          const mainQuery = cteMatch[3];
+          const cteResult = executeQuery(cteQuery, tables);
+          if (!cteResult.success) return { success: false, error: `CTE '${cteName}' ERROR: ${cteResult.error}` };
+          const tempTable: MockTable = {
+              name: cteName,
+              columns: cteResult.data && cteResult.data.length > 0 ? Object.keys(cteResult.data[0]).map(k => ({ name: k, type: 'string' })) : [],
+              data: cteResult.data || []
+          };
+          return executeQuery(mainQuery, [...tables, tempTable]);
+      }
+  }
+
   if (!q.toLowerCase().startsWith('select')) {
-    return { success: false, error: "SYNTAX ERROR: Query must start with SELECT" };
+    return { success: false, error: "SYNTAX ERROR: Query must start with SELECT or WITH" };
   }
 
   try {
@@ -160,7 +281,6 @@ export const executeQuery = (query: string, tables: MockTable[]): QueryResult =>
     let lastIndex = 0;
     let lastKeyword = 'SELECT';
 
-    // Initial SELECT content
     const fromMatch = /\s+FROM\s+/i.exec(q);
     if (!fromMatch) return { success: false, error: "SYNTAX ERROR: Missing FROM clause." };
     
@@ -168,32 +288,32 @@ export const executeQuery = (query: string, tables: MockTable[]): QueryResult =>
     lastIndex = fromMatch.index + fromMatch[0].length;
     lastKeyword = 'FROM';
 
-    // Scan rest
     while ((match = keywordRegex.exec(q)) !== null) {
         sections[lastKeyword] = q.substring(lastIndex, match.index).trim();
         lastKeyword = match[1].toUpperCase();
         lastIndex = keywordRegex.lastIndex;
     }
-    // Final section
     sections[lastKeyword] = q.substring(lastIndex).trim();
 
     if (!sections['FROM']) return { success: false, error: "SYNTAX ERROR: Missing FROM clause." };
 
-    // --- 2. FROM & JOIN (Flatten Data) ---
+    // --- 2. FROM & JOIN (With Alias Support) ---
     const joinTokens = sections['FROM'].split(/\s+(LEFT\s+)?JOIN\s+/i);
-    const mainTableName = joinTokens[0].trim();
-    const mainTable = tables.find(t => t.name.toLowerCase() === mainTableName.toLowerCase());
-    if (!mainTable) return { success: false, error: `REFERENCE ERROR: Table '${mainTableName}' not found.` };
+    const mainTableDef = parseTableStr(joinTokens[0]);
+    const mainTable = tables.find(t => t.name.toLowerCase() === mainTableDef.name.toLowerCase());
+    
+    if (!mainTable) return { success: false, error: `REFERENCE ERROR: Table '${mainTableDef.name}' not found.` };
 
+    // Flatten Main Table with Alias Prefixes
     let resultData = mainTable.data.map(row => {
         const flatRow: any = { ...row };
         Object.keys(row).forEach(key => {
-            flatRow[`${mainTable.name}.${key}`] = row[key];
+            flatRow[`${mainTable.name}.${key}`] = row[key]; // Original Name
+            flatRow[`${mainTableDef.alias}.${key}`] = row[key]; // Alias
         });
         return flatRow;
     });
 
-    // Handle Joins
     for (let i = 1; i < joinTokens.length; i += 2) {
         const joinType = joinTokens[i]; 
         const joinBody = joinTokens[i+1]; 
@@ -202,10 +322,12 @@ export const executeQuery = (query: string, tables: MockTable[]): QueryResult =>
         const onIndex = joinBody.search(/\s+ON\s+/i);
         if (onIndex === -1) return { success: false, error: "SYNTAX ERROR: JOIN missing ON clause." };
 
-        const joinTableName = joinBody.substring(0, onIndex).trim();
+        const joinTableStr = joinBody.substring(0, onIndex).trim();
+        const joinTableDef = parseTableStr(joinTableStr);
         const condition = joinBody.substring(onIndex + 4).trim();
-        const joinTable = tables.find(t => t.name.toLowerCase() === joinTableName.toLowerCase());
-        if (!joinTable) return { success: false, error: `REFERENCE ERROR: Table '${joinTableName}' not found.` };
+        
+        const joinTable = tables.find(t => t.name.toLowerCase() === joinTableDef.name.toLowerCase());
+        if (!joinTable) return { success: false, error: `REFERENCE ERROR: Table '${joinTableDef.name}' not found.` };
 
         const newData = [];
         for (const mainRow of resultData) {
@@ -213,11 +335,15 @@ export const executeQuery = (query: string, tables: MockTable[]): QueryResult =>
             for (const joinRow of joinTable.data) {
                 const tempRow = { ...mainRow }; 
                 Object.keys(joinRow).forEach(key => {
-                    tempRow[key] = joinRow[key];
+                    // We must be careful not to overwrite columns if names collide, unless aliased
+                    // But for simple "row" merging, we just merge.
+                    // The "getRowValue" helper prioritizes alias lookups.
+                    tempRow[key] = joinRow[key]; 
                     tempRow[`${joinTable.name}.${key}`] = joinRow[key];
+                    tempRow[`${joinTableDef.alias}.${key}`] = joinRow[key];
                 });
 
-                if (evaluateCondition(tempRow, condition)) {
+                if (evaluateCondition(tempRow, condition, tables)) {
                     matchFound = true;
                     newData.push(tempRow);
                 }
@@ -225,8 +351,10 @@ export const executeQuery = (query: string, tables: MockTable[]): QueryResult =>
             if (isLeft && !matchFound) {
                 const nullRow = { ...mainRow };
                 joinTable.columns.forEach(col => {
-                    if (!nullRow.hasOwnProperty(col.name)) nullRow[col.name] = null;
+                    // Set nulls
+                    nullRow[col.name] = null;
                     nullRow[`${joinTable.name}.${col.name}`] = null;
+                    nullRow[`${joinTableDef.alias}.${col.name}`] = null;
                 });
                 newData.push(nullRow);
             }
@@ -241,81 +369,66 @@ export const executeQuery = (query: string, tables: MockTable[]): QueryResult =>
         resultData = resultData.filter(row => {
             return orGroups.some(group => {
                 const andConditions = group.split(/\s+AND\s+/i);
-                return andConditions.every(cond => evaluateCondition(row, cond));
+                return andConditions.every(cond => evaluateCondition(row, cond, tables));
             });
         });
     }
 
-    // --- 4. IDENTIFY AGGREGATIONS IN SELECT/HAVING/ORDER BY ---
-    // We need to know if this is an aggregate query even if GROUP BY is missing (implicit group)
-    // Regex for FUNC(arg)
+    // --- 4. GROUP BY ---
     const aggRegex = /(COUNT|SUM|AVG|MAX|MIN)\s*\((.+?)\)/i;
-    const hasAggregateInSelect = aggRegex.test(sections['SELECT']);
+    const selectWithoutWindow = sections['SELECT'].replace(/\s+OVER\s*\(.*?\)/gi, '');
+    const hasAggregateInSelect = aggRegex.test(selectWithoutWindow);
     const hasGroupBy = !!sections['GROUP BY'];
     
-    let groupedData: any[] = resultData; // If no grouping, it's just raw rows
+    let groupedData: any[] = resultData;
 
-    // --- 5. GROUP BY & AGGREGATION ---
     if (hasGroupBy || hasAggregateInSelect) {
         const buckets: Record<string, any[]> = {};
-        
         if (hasGroupBy) {
             const groupKeys = sections['GROUP BY'].split(',').map(k => k.trim());
-            
             resultData.forEach(row => {
-                // Create a unique key for the bucket based on values of group columns
                 const bucketKey = groupKeys.map(k => getRowValue(row, k)).join('|||');
                 if (!buckets[bucketKey]) buckets[bucketKey] = [];
                 buckets[bucketKey].push(row);
             });
         } else {
-            // Implicit group (one big bucket)
             buckets['ALL'] = resultData;
         }
 
-        // Collapse buckets into result rows
         groupedData = Object.keys(buckets).map(key => {
             const rows = buckets[key];
-            const representative = rows[0] || {}; // Use first row for non-agg values
+            const representative = rows[0] || {};
             const newRow: any = { ...representative };
-            
-            // We need to pre-calculate ALL aggregates requested in SELECT, HAVING, ORDER BY
-            // Find all agg patterns in the full query string to be safe, or just compute on demand?
-            // Safer: Extract all "FUNC(col)" strings from the original query text
             const aggMatches = q.matchAll(/(COUNT|SUM|AVG|MAX|MIN)\s*\((.+?)\)/gi);
-            
             for (const match of aggMatches) {
-                const fullStr = match[0]; // e.g. "SUM(price)"
-                const func = match[1].toUpperCase(); // SUM
-                const col = match[2]; // price
-                
-                // Calculate and store with the key "SUM(price)"
+                const fullStr = match[0];
+                if (q.includes(fullStr + " OVER")) continue; 
+                const func = match[1].toUpperCase();
+                const col = match[2];
                 newRow[fullStr] = calculateAggregate(func, col, rows);
-                
-                // Also store normalized key "SUM( price )" -> "SUM(price)" handling
-                // We'll rely on getRowValue fuzzy matching later
             }
             return newRow;
         });
     }
 
-    // --- 6. HAVING ---
+    // --- 5. HAVING ---
     if (sections['HAVING']) {
-        if (!hasGroupBy && !hasAggregateInSelect) {
-             return { success: false, error: "SYNTAX ERROR: HAVING clause requires GROUP BY or Aggregation." };
-        }
-        
+        if (!hasGroupBy && !hasAggregateInSelect) return { success: false, error: "SYNTAX ERROR: HAVING clause requires GROUP BY." };
         const havingClause = sections['HAVING'];
         const orGroups = havingClause.split(/\s+OR\s+/i);
         groupedData = groupedData.filter(row => {
             return orGroups.some(group => {
                 const andConditions = group.split(/\s+AND\s+/i);
-                return andConditions.every(cond => evaluateCondition(row, cond));
+                return andConditions.every(cond => evaluateCondition(row, cond, tables));
             });
         });
     }
-
     resultData = groupedData;
+
+    // --- 6. WINDOW FUNCTIONS ---
+    if (sections['SELECT'].toUpperCase().includes(' OVER')) {
+        resultData = processWindowFunctions(resultData, sections['SELECT']);
+    }
 
     // --- 7. ORDER BY ---
     if (sections['ORDER BY']) {
@@ -323,23 +436,13 @@ export const executeQuery = (query: string, tables: MockTable[]): QueryResult =>
         resultData.sort((a, b) => {
             for (let part of parts) {
                 const [colStr, dir] = part.split(/\s+/);
-                // Handle "ORDER BY COUNT(*) DESC"
-                // The key in the object is literally "COUNT(*)" if we calculated it earlier
-                // But colStr might be "COUNT(*)"
-                
                 const col = colStr.trim();
                 const isDesc = dir && dir.toUpperCase() === 'DESC';
-                
                 let valA = getRowValue(a, col);
                 let valB = getRowValue(b, col);
-                
-                if (valA === undefined) valA = null;
-                if (valB === undefined) valB = null;
-
+                if (valA === undefined) valA = null; if (valB === undefined) valB = null;
                 if (valA === valB) continue;
-                if (valA === null) return 1; 
-                if (valB === null) return -1;
-
+                if (valA === null) return 1; if (valB === null) return -1;
                 if (valA < valB) return isDesc ? 1 : -1;
                 if (valA > valB) return isDesc ? -1 : 1;
             }
@@ -353,19 +456,28 @@ export const executeQuery = (query: string, tables: MockTable[]): QueryResult =>
     const columnsStr = isDistinct ? selectClause.substring(9).trim() : selectClause;
 
     if (columnsStr !== '*') {
-        const colDefs = columnsStr.split(',').map(c => {
-            // Handle "col AS alias"
-            const asMatch = c.match(/^(.+)\s+AS\s+(.+)$/i);
-            if (asMatch) {
-                return { source: asMatch[1].trim(), alias: asMatch[2].trim() };
+        const colDefStrings = [];
+        let parenCount = 0;
+        let lastSplit = 0;
+        for (let i = 0; i < columnsStr.length; i++) {
+            if (columnsStr[i] === '(') parenCount++;
+            if (columnsStr[i] === ')') parenCount--;
+            if (columnsStr[i] === ',' && parenCount === 0) {
+                colDefStrings.push(columnsStr.substring(lastSplit, i).trim());
+                lastSplit = i + 1;
             }
+        }
+        colDefStrings.push(columnsStr.substring(lastSplit).trim());
+
+        const colDefs = colDefStrings.map(c => {
+            const asMatch = c.match(/^(.+)\s+AS\s+(.+)$/i);
+            if (asMatch) return { source: asMatch[1].trim(), alias: asMatch[2].trim() };
             return { source: c.trim(), alias: c.trim() };
         });
 
         resultData = resultData.map(row => {
             const newRow: any = {};
             colDefs.forEach(def => {
-                // If it's an aggregate, it should already be in the row
                 let val = getRowValue(row, def.source);
                 newRow[def.alias] = val !== undefined ? val : null;
             });
@@ -373,7 +485,7 @@ export const executeQuery = (query: string, tables: MockTable[]): QueryResult =>
         });
     }
 
-    // --- 9. DISTINCT (Final) ---
+    // --- 9. DISTINCT ---
     if (isDistinct) {
         const seen = new Set();
         resultData = resultData.filter(row => {

@@ -669,3 +669,358 @@ export const LEVEL_4: LevelData = {
     }
   ]
 };
+
+export const LEVEL_5: LevelData = {
+    id: 5,
+    title: "WARPSPACE",
+    description: "Reality is folding into itself. Use Subqueries and CTEs to navigate nested logic.",
+    theme: ThemeStyle.FRACTAL,
+    missions: [
+        // --- QUEST 1: HIDDEN SPIES (SUBQUERIES) ---
+        {
+            id: "Q1_SPIES",
+            title: "TRACE HIDDEN SPIES",
+            story: "NYX: We're in Warpspace. Things here exist inside other things.\nPIXEL: There are spies infiltrated among the citizens, but they are only listed in the hidden 'covert_ops' file. \n\nOBJECTIVE: Find the citizens who are also secret agents. Use a subquery to check if their ID is inside the 'covert_ops' list.",
+            objective: "Find the spies. `SELECT * FROM citizens WHERE id IN (SELECT agent_id FROM covert_ops)`.",
+            hint: "Use `IN (SELECT ...)` to filter based on another table.",
+            tables: [
+                {
+                    name: "citizens",
+                    columns: [{ name: "id", type: "number" }, { name: "name", type: "string" }],
+                    data: [
+                        { id: 1, name: "Citizen_A" },
+                        { id: 2, name: "Citizen_B" },
+                        { id: 3, name: "Citizen_C" }
+                    ]
+                },
+                {
+                    name: "covert_ops",
+                    columns: [{ name: "agent_id", type: "number" }, { name: "codename", type: "string" }],
+                    data: [
+                        { agent_id: 2, codename: "Shadow" },
+                        { agent_id: 99, codename: "Ghost" }
+                    ]
+                }
+            ],
+            expectedResult: (data) => data.length === 1 && data[0].name === "Citizen_B",
+            successMessage: "SPIES EXPOSED. The hidden layer has been revealed."
+        },
+
+        // --- QUEST 2: MULTI-LAYER MAPS (CTE) ---
+        {
+            id: "Q2_LAYERS",
+            title: "RECONSTRUCT MAPS",
+            story: "ZERO: This map is a fractal. It goes on forever.\nPIXEL: We need to simplify it. Let's isolate the 'Deep' layer first, then search inside it. \n\nOBJECTIVE: Use a CTE (Common Table Expression) to create a temporary table 'deep_zones' for zones with layer='Deep', then select the 'Unstable' ones from it.",
+            objective: "Use a CTE. `WITH deep_zones AS (SELECT * FROM zones WHERE layer = 'Deep') SELECT * FROM deep_zones WHERE status = 'Unstable'`.",
+            hint: "Start with `WITH name AS (...)` then write your main query.",
+            table: {
+                name: "zones",
+                columns: [{ name: "id", type: "number" }, { name: "name", type: "string" }, { name: "layer", type: "string" }, { name: "status", type: "string" }],
+                data: [
+                    { id: 1, name: "Surface_A", layer: "Surface", status: "Stable" },
+                    { id: 2, name: "Deep_B", layer: "Deep", status: "Stable" },
+                    { id: 3, name: "Deep_C", layer: "Deep", status: "Unstable" }, // Target
+                    { id: 4, name: "Void_D", layer: "Void", status: "Unstable" }
+                ]
+            },
+            expectedResult: (data) => data.length === 1 && data[0].name === "Deep_C",
+            successMessage: "LAYERS STABILIZED. The fractal collapse has stopped."
+        },
+
+        // --- QUEST 3: ENDLESS LOOP (NESTED LOGIC) ---
+        {
+            id: "Q3_LOOP",
+            title: "BREAK THE LOOP",
+            story: "NYX: We're stuck in a time loop! The exit leads back to the start.\nZERO: I can see the pattern. \nPIXEL: Find the rooms that are flagged as 'Loop' in the 'paths' table.\n\nOBJECTIVE: Select all rooms where the ID is IN the list of 'next_room' from paths where type is 'Loop'.",
+            objective: "Break the cycle. `SELECT * FROM rooms WHERE id IN (SELECT next_room FROM paths WHERE type = 'Loop')`.",
+            hint: "Filter the paths first in the subquery, then find the matching rooms.",
+            tables: [
+                {
+                    name: "rooms",
+                    columns: [{ name: "id", type: "number" }, { name: "name", type: "string" }],
+                    data: [
+                        { id: 101, name: "Entrance" },
+                        { id: 102, name: "Hallway" },
+                        { id: 103, name: "Trap" }
+                    ]
+                },
+                {
+                    name: "paths",
+                    columns: [{ name: "path_id", type: "number" }, { name: "next_room", type: "number" }, { name: "type", type: "string" }],
+                    data: [
+                        { path_id: 1, next_room: 102, type: "Safe" },
+                        { path_id: 2, next_room: 103, type: "Loop" } // Target 103
+                    ]
+                }
+            ],
+            expectedResult: (data) => data.length === 1 && data[0].name === "Trap",
+            successMessage: "LOOP BROKEN. Time is flowing forward again."
+        },
+
+        // --- BOSS: RECURSION ENTITY ---
+        {
+            id: "BOSS_RECURSION",
+            title: "FINAL BOSS: RECURSION ENTITY",
+            story: "WARNING: RECURSIVE PARADOX DETECTED.\n\nThe Recursion Entity is hiding its core inside a shell, inside a shield, inside a distortion.\n\nSTRATEGY: You need to peel the layers.\n1. Create a CTE 'exposed_core' for nodes that are 'Vulnerable'.\n2. Select from 'exposed_core' where the 'power_level' is greater than 9000.",
+            objective: "Target the Core. `WITH exposed_core AS (SELECT * FROM entity_nodes WHERE state = 'Vulnerable') SELECT * FROM exposed_core WHERE power > 9000`.",
+            hint: "Combine a CTE with a WHERE clause.",
+            table: {
+                name: "entity_nodes",
+                columns: [{ name: "node_id", type: "string" }, { name: "state", type: "string" }, { name: "power", type: "number" }],
+                data: [
+                    { node_id: "SHELL", state: "Shielded", power: 5000 },
+                    { node_id: "DECOY", state: "Vulnerable", power: 100 },
+                    { node_id: "CORE", state: "Vulnerable", power: 9999 } // Target
+                ]
+            },
+            expectedResult: (data) => data.length === 1 && data[0].node_id === "CORE",
+            successMessage: "ENTITY DELETED. Warpspace has unfolded into a stable plane.\n\nZERO: 'I can see... deeper than before.'\n\nABILITY UNLOCKED: MULTILAYER SIGHT."
+        }
+    ]
+};
+
+export const LEVEL_6: LevelData = {
+    id: 6,
+    title: "TIME LABYRINTH",
+    description: "A swirling maze of broken timelines. Master Window Functions to restore the flow of events.",
+    theme: ThemeStyle.CHRONO,
+    missions: [
+        // --- QUEST 1: REBUILD SEQUENCES (ROW_NUMBER) ---
+        {
+            id: "Q1_SEQUENCE",
+            title: "REBUILD SEQUENCES",
+            story: "NYX: Time is out of order. Events are happening randomly.\nPIXEL: We need to assign a proper sequence number to each event based on its timestamp.\n\nOBJECTIVE: Use `ROW_NUMBER() OVER (ORDER BY timestamp)` to generate a clean sequential ID for the events.",
+            objective: "Restore order. `SELECT event_name, ROW_NUMBER() OVER (ORDER BY timestamp) FROM temporal_log`.",
+            hint: "ROW_NUMBER() generates a unique number for each row based on the ORDER BY clause.",
+            table: {
+                name: "temporal_log",
+                columns: [{ name: "id", type: "number" }, { name: "event_name", type: "string" }, { name: "timestamp", type: "number" }],
+                data: [
+                    { id: 99, event_name: "End", timestamp: 3000 },
+                    { id: 50, event_name: "Middle", timestamp: 2000 },
+                    { id: 10, event_name: "Start", timestamp: 1000 }
+                ]
+            },
+            expectedResult: (data) => {
+                // Check if the Start event has row number 1
+                const start = data.find(d => d.event_name === "Start");
+                const end = data.find(d => d.event_name === "End");
+                // Find the key that holds the window function result
+                const keys = Object.keys(data[0]);
+                const rowNumKey = keys.find(k => k.includes("ROW_NUMBER"));
+                return start && end && start[rowNumKey!] === 1 && end[rowNumKey!] === 3;
+            },
+            successMessage: "SEQUENCE RESTORED. Time flows linearly again."
+        },
+
+        // --- QUEST 2: ANALYZE CYCLES (LAG) ---
+        {
+            id: "Q2_CYCLES",
+            title: "DETECT LOOPS",
+            story: "ZERO: I feel like I've been here before.\nNYX: You have. It's a time loop. We need to compare the current room with the *previous* room visited to spot the repetition.\n\nOBJECTIVE: Use `LAG(room_name) OVER (ORDER BY visit_time)` to see the previous room next to the current one.",
+            objective: "Spot the loop. `SELECT room_name, LAG(room_name) OVER (ORDER BY visit_time) FROM travel_log`.",
+            hint: "LAG() accesses data from the previous row in the window.",
+            table: {
+                name: "travel_log",
+                columns: [{ name: "visit_id", type: "number" }, { name: "room_name", type: "string" }, { name: "visit_time", type: "number" }],
+                data: [
+                    { visit_id: 1, room_name: "Library", visit_time: 100 },
+                    { visit_id: 2, room_name: "Garden", visit_time: 200 },
+                    { visit_id: 3, room_name: "Library", visit_time: 300 } // Loop
+                ]
+            },
+            expectedResult: (data) => {
+                const lastEntry = data[2];
+                const keys = Object.keys(lastEntry);
+                const lagKey = keys.find(k => k.includes("LAG"));
+                return lastEntry.room_name === "Library" && lastEntry[lagKey!] === "Garden";
+            },
+            successMessage: "LOOP IDENTIFIED. We can break out of the cycle now."
+        },
+
+        // --- QUEST 3: PREDICT COLLAPSE (LEAD) ---
+        {
+            id: "Q3_PREDICT",
+            title: "PREDICT COLLAPSE",
+            story: "PIXEL: A storm is coming! We need to know what happens *next* before it happens.\nNYX: Use the Chrono-Reader. Look ahead in the stream.\n\nOBJECTIVE: Use `LEAD(stability) OVER (ORDER BY time_tick)` to see the future stability value alongside the current one.",
+            objective: "Look ahead. `SELECT time_tick, stability, LEAD(stability) OVER (ORDER BY time_tick) FROM readings`.",
+            hint: "LEAD() accesses data from the next row in the window.",
+            table: {
+                name: "readings",
+                columns: [{ name: "time_tick", type: "number" }, { name: "stability", type: "string" }],
+                data: [
+                    { time_tick: 1, stability: "Stable" },
+                    { time_tick: 2, stability: "Shaking" },
+                    { time_tick: 3, stability: "COLLAPSE" }
+                ]
+            },
+            expectedResult: (data) => {
+                const shaking = data[1];
+                const leadKey = Object.keys(shaking).find(k => k.includes("LEAD"));
+                return shaking.stability === "Shaking" && shaking[leadKey!] === "COLLAPSE";
+            },
+            successMessage: "PREDICTION CONFIRMED. Evasive maneuvers initialized."
+        },
+
+        // --- QUEST 4: RESTORE TOTALS (RUNNING SUM) ---
+        {
+            id: "Q4_TOTALS",
+            title: "RESTORE HISTORY",
+            story: "ZERO: History is fragmented. The cumulative data is gone.\nNYX: We need to rebuild the timeline of energy growth. Calculate the running total of energy over time.\n\nOBJECTIVE: Use `SUM(energy) OVER (ORDER BY year)` to calculate the cumulative energy.",
+            objective: "Rebuild history. `SELECT year, energy, SUM(energy) OVER (ORDER BY year) FROM history`.",
+            hint: "SUM() with an ORDER BY clause inside OVER() creates a running total.",
+            table: {
+                name: "history",
+                columns: [{ name: "year", type: "number" }, { name: "energy", type: "number" }],
+                data: [
+                    { year: 2020, energy: 10 },
+                    { year: 2021, energy: 20 },
+                    { year: 2022, energy: 30 }
+                ]
+            },
+            expectedResult: (data) => {
+                const last = data[2]; // 2022
+                const sumKey = Object.keys(last).find(k => k.includes("SUM"));
+                // Total should be 10+20+30 = 60
+                return last[sumKey!] === 60;
+            },
+            successMessage: "HISTORY RESTORED. The timeline is solidifying."
+        },
+
+        // --- BOSS: TIME WARDEN ---
+        {
+            id: "BOSS_WARDEN",
+            title: "FINAL BOSS: TIME WARDEN",
+            story: "WARNING: TEMPORAL ANOMALY.\n\nThe Time Warden is shifting ranks! He attacks the entity with the highest power rank in each zone.\n\nSTRATEGY: You need to identify the rank of each power signature within its zone.\n\nOBJECTIVE: `SELECT *, RANK() OVER (PARTITION BY zone ORDER BY power DESC) FROM signatures`.",
+            objective: "Rank the threats. Use RANK(), partition by zone, order by power DESC.",
+            hint: "PARTITION BY groups the ranking. ORDER BY determines the rank within that group.",
+            table: {
+                name: "signatures",
+                columns: [{ name: "id", type: "number" }, { name: "zone", type: "string" }, { name: "power", type: "number" }],
+                data: [
+                    { id: 1, zone: "Alpha", power: 5000 },
+                    { id: 2, zone: "Alpha", power: 8000 }, // Rank 1 in Alpha
+                    { id: 3, zone: "Beta", power: 1000 },
+                    { id: 4, zone: "Beta", power: 9000 }  // Rank 1 in Beta
+                ]
+            },
+            expectedResult: (data) => {
+                const alphaHigh = data.find(d => d.id === 2);
+                const betaHigh = data.find(d => d.id === 4);
+                const rankKey = Object.keys(data[0]).find(k => k.includes("RANK"));
+                return alphaHigh[rankKey!] === 1 && betaHigh[rankKey!] === 1;
+            },
+            successMessage: "WARDEN DEFEATED. The Time Labyrinth has aligned.\n\nZERO: 'I can see... everything. Past, present, future.'\n\nABILITY UNLOCKED: CHRONO-READER."
+        }
+    ]
+};
+
+export const LEVEL_7: LevelData = {
+    id: 7,
+    title: "THE VAULT OF STABILITY",
+    description: "The core of reality's persistence. Maintain ACID properties to prevent corruption.",
+    theme: ThemeStyle.VAULT,
+    missions: [
+        // --- QUEST 1: SEAL BROKEN WRITES (ATOMICITY) ---
+        {
+            id: "Q1_ATOMICITY",
+            title: "SEAL BROKEN WRITES",
+            story: "ZERO: This vault... it feels heavy. Like the air is made of glass.\nNYX: This is where changes are made permanent. But some transactions crashed halfway. We have 'Pending' writes that never committed.\n\nOBJECTIVE: Find all transaction logs that are still in 'Pending' state to identify the rollback targets.",
+            objective: "Identify loose ends. `SELECT * FROM transaction_log WHERE state = 'Pending'`.",
+            hint: "Atomicity means all or nothing. Pending states are dangerous.",
+            table: {
+                name: "transaction_log",
+                columns: [{ name: "tx_id", type: "number" }, { name: "operation", type: "string" }, { name: "state", type: "string" }],
+                data: [
+                    { tx_id: 101, operation: "Update_World_A", state: "Committed" },
+                    { tx_id: 102, operation: "Delete_Void", state: "Pending" }, // Target
+                    { tx_id: 103, operation: "Insert_Hero", state: "Committed" }
+                ]
+            },
+            expectedResult: (data) => data.length === 1 && data[0].tx_id === 102,
+            successMessage: "PARTIAL STATES ROLLED BACK. The pillars are solid again."
+        },
+
+        // --- QUEST 2: PURGE CONFLICTS (CONCURRENCY) ---
+        {
+            id: "Q2_CONFLICTS",
+            title: "PURGE CONFLICTS",
+            story: "PIXEL: Two processes are fighting over the same data block! It's a race condition.\nZERO: I see the sparks. They are targeting the same ID.\n\nOBJECTIVE: Find the conflicting processes. Join the 'active_processes' table to itself to find two DIFFERENT process IDs that target the SAME 'target_block'.",
+            objective: "Detect race condition. `SELECT p1.pid AS pid1, p2.pid AS pid2 FROM active_processes AS p1 JOIN active_processes AS p2 ON p1.target_block = p2.target_block WHERE p1.pid <> p2.pid`.",
+            hint: "Use aliases (AS p1, AS p2) to join a table to itself.",
+            table: {
+                name: "active_processes",
+                columns: [{ name: "pid", type: "number" }, { name: "target_block", type: "string" }],
+                data: [
+                    { pid: 1, target_block: "Block_A" },
+                    { pid: 2, target_block: "Block_B" },
+                    { pid: 3, target_block: "Block_A" } // Conflict with 1
+                ]
+            },
+            expectedResult: (data) => data.length >= 2, // Should find 1-3 and 3-1
+            successMessage: "CONFLICT RESOLVED. Priority assigned to Process 1."
+        },
+
+        // --- QUEST 3: REPAIR OVERLAPS (DIRTY READS) ---
+        {
+            id: "Q3_DIRTY_READ",
+            title: "REPAIR OVERLAPS",
+            story: "NYX: Someone is reading data that hasn't been committed yet. It's a Dirty Read.\nPIXEL: The 'isolation_level' is set too low on these sessions.\n\nOBJECTIVE: Identify sessions running with 'READ_UNCOMMITTED'. They are the source of the corruption.",
+            objective: "Enforce isolation. `SELECT * FROM db_sessions WHERE isolation_level = 'READ_UNCOMMITTED'`.",
+            hint: "Higher isolation levels prevent dirty reads.",
+            table: {
+                name: "db_sessions",
+                columns: [{ name: "session_id", type: "number" }, { name: "user", type: "string" }, { name: "isolation_level", type: "string" }],
+                data: [
+                    { session_id: 1, user: "Admin", isolation_level: "SERIALIZABLE" },
+                    { session_id: 2, user: "Guest", isolation_level: "READ_UNCOMMITTED" }, // Target
+                    { session_id: 3, user: "Bot", isolation_level: "READ_COMMITTED" }
+                ]
+            },
+            expectedResult: (data) => data.length === 1 && data[0].session_id === 2,
+            successMessage: "ISOLATION SHIELDS RESTORED. No more leaking data."
+        },
+
+        // --- MINI-BOSS: DEADLOCK HYDRA ---
+        {
+            id: "BOSS_DEADLOCK",
+            title: "MINI-BOSS: DEADLOCK HYDRA",
+            story: "ALERT: DEADLOCK DETECTED.\n\nThe Hydra has two heads. Head A waits for Resource B. Head B waits for Resource A. They are stuck forever.\n\nOBJECTIVE: Detect the cycle! Find the pair of locks where Process 1 waits for Process 2 AND Process 2 waits for Process 1.",
+            objective: "Break the cycle. `SELECT l1.process_id AS p1, l2.process_id AS p2 FROM locks AS l1 JOIN locks AS l2 ON l1.waiting_for = l2.process_id AND l2.waiting_for = l1.process_id`.",
+            hint: "Join the locks table to itself. Match 'waiting_for' to 'process_id' in both directions.",
+            table: {
+                name: "locks",
+                columns: [{ name: "process_id", type: "number" }, { name: "waiting_for", type: "number" }],
+                data: [
+                    { process_id: 10, waiting_for: 20 }, // 10 waits for 20
+                    { process_id: 20, waiting_for: 10 }, // 20 waits for 10 (Cycle!)
+                    { process_id: 30, waiting_for: 40 },
+                    { process_id: 40, waiting_for: null }
+                ]
+            },
+            expectedResult: (data) => data.length >= 1, // Should return the pair
+            successMessage: "CYCLE SHATTERED. The Hydra collapses as the resources are freed."
+        },
+
+        // --- FINAL BOSS: TRANSACTION OVERLORD ---
+        {
+            id: "BOSS_OVERLORD",
+            title: "FINAL BOSS: TRANSACTION OVERLORD",
+            story: "WARNING: MASTER LOG CORRUPTION.\n\nThe Overlord is overwriting the history of the universe. It's inserting 'Phantom' entries that shouldn't exist.\n\nSTRATEGY: You must validate the log.\n1. Find entries where the 'checksum' is NULL (Integrity Failure).\n2. OR entries where the 'status' is 'Rolled_Back' but they are still visible.",
+            objective: "Purge the Log. `SELECT * FROM master_log WHERE checksum IS NULL OR status = 'Rolled_Back'`.",
+            hint: "Use OR to combine the two failure conditions.",
+            table: {
+                name: "master_log",
+                columns: [{ name: "entry_id", type: "number" }, { name: "status", type: "string" }, { name: "checksum", type: "string" }],
+                data: [
+                    { entry_id: 1, status: "Committed", checksum: "0xAF" },
+                    { entry_id: 2, status: "Committed", checksum: null }, // Target (Integrity fail)
+                    { entry_id: 3, status: "Rolled_Back", checksum: "0x00" }, // Target (Should not be visible)
+                    { entry_id: 4, status: "Committed", checksum: "0xFF" }
+                ]
+            },
+            expectedResult: (data) => data.length === 2,
+            successMessage: "CONSISTENCY RESTORED. The Vault is stable. \n\nZERO: 'I control the flow of change itself now.'\n\nABILITY UNLOCKED: REALITY STABILIZER."
+        }
+    ]
+};

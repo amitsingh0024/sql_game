@@ -194,6 +194,83 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({ onBack, onSelectLevel 
                 ENTER RIFT
               </HoloButton>
            </div>
+
+           {/* Level 5: Warpspace */}
+           <div className="bg-void-panel border border-white/10 rounded-lg p-5 hover:border-green-400 transition-all group hover:-translate-y-1">
+              <div className="h-32 mb-4 bg-gray-900 rounded relative overflow-hidden">
+                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(74,222,128,0.2),transparent_70%)]" />
+                 {/* Fractal Circles */}
+                 <div className="absolute center w-20 h-20 border-2 border-green-500/30 rounded-full top-6 left-[calc(50%-2.5rem)] animate-pulse" />
+                 <div className="absolute center w-12 h-12 border-2 border-green-500/50 rounded-full top-10 left-[calc(50%-1.5rem)] animate-ping" />
+                 
+                 <div className="absolute center text-4xl text-white/10 font-display font-bold w-full text-center top-8 group-hover:text-green-400/40 transition-colors">
+                   WARP
+                 </div>
+                 <div className="absolute center text-4xl text-white/10 font-display font-bold w-full text-center top-12 left-2 group-hover:text-green-400/40 transition-colors">
+                   SPACE
+                 </div>
+              </div>
+              <h4 className="text-xl font-display text-white group-hover:text-green-400 transition-colors">DIMENSION 05</h4>
+              <div className="text-gray-400 font-mono text-xs mb-3">SECTOR: WARPSPACE</div>
+              <p className="text-sm text-gray-500 mb-4 h-10">
+                Reality is recursive. Use <span className="text-green-400">SUBQUERIES</span> to see inside deeper layers.
+              </p>
+              <HoloButton onClick={() => onSelectLevel(5)} variant="primary" className="w-full text-sm py-2 text-green-400 border-green-400 hover:bg-green-400 hover:text-black">
+                ENTER RIFT
+              </HoloButton>
+           </div>
+
+           {/* Level 6: Time Labyrinth */}
+           <div className="bg-void-panel border border-white/10 rounded-lg p-5 hover:border-amber-400 transition-all group hover:-translate-y-1">
+              <div className="h-32 mb-4 bg-gray-900 rounded relative overflow-hidden">
+                 <div className="absolute inset-0 bg-[conic-gradient(from_0deg,transparent,rgba(251,191,36,0.2),transparent)] animate-spin-slow" />
+                 {/* Clock Face elements */}
+                 <div className="absolute center w-24 h-24 border border-amber-500/30 rounded-full top-4 left-[calc(50%-3rem)]" />
+                 <div className="absolute center w-1 h-10 bg-amber-500/50 top-11 left-[calc(50%-0.125rem)] transform -translate-y-1/2 rotate-45 origin-bottom" />
+                 <div className="absolute center w-1 h-8 bg-amber-500/50 top-13 left-[calc(50%-0.125rem)] transform -translate-y-1/2 -rotate-12 origin-bottom" />
+                 
+                 <div className="absolute center text-4xl text-white/10 font-display font-bold w-full text-center top-8 group-hover:text-amber-400/40 transition-colors">
+                   TIME
+                 </div>
+                 <div className="absolute center text-4xl text-white/10 font-display font-bold w-full text-center top-12 left-2 group-hover:text-amber-400/40 transition-colors">
+                   MAZE
+                 </div>
+              </div>
+              <h4 className="text-xl font-display text-white group-hover:text-amber-400 transition-colors">DIMENSION 06</h4>
+              <div className="text-gray-400 font-mono text-xs mb-3">SECTOR: TIME LABYRINTH</div>
+              <p className="text-sm text-gray-500 mb-4 h-10">
+                Time is shifting. Use <span className="text-amber-400">WINDOW FUNCTIONS</span> to restore sequence order.
+              </p>
+              <HoloButton onClick={() => onSelectLevel(6)} variant="primary" className="w-full text-sm py-2 text-amber-400 border-amber-400 hover:bg-amber-400 hover:text-black">
+                ENTER RIFT
+              </HoloButton>
+           </div>
+
+           {/* Level 7: The Vault */}
+           <div className="bg-void-panel border border-white/10 rounded-lg p-5 hover:border-yellow-600 transition-all group hover:-translate-y-1">
+              <div className="h-32 mb-4 bg-gray-900 rounded relative overflow-hidden">
+                 <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(202,138,4,0.1) 25%,transparent 25%),linear-gradient(225deg,rgba(202,138,4,0.1) 25%,transparent 25%),linear-gradient(45deg,rgba(202,138,4,0.1) 25%,transparent 25%),linear-gradient(315deg,rgba(202,138,4,0.1) 25%,transparent 25%)] bg-[length:20px_20px]" />
+                 {/* Vault Lock */}
+                 <div className="absolute center w-20 h-20 border-4 border-yellow-600/50 rounded-full top-6 left-[calc(50%-2.5rem)]" />
+                 <div className="absolute center w-14 h-14 border-2 border-yellow-600/30 rounded-full top-9 left-[calc(50%-1.75rem)] animate-spin-slow" />
+                 <div className="absolute center w-4 h-4 bg-yellow-600/80 rounded-full top-14 left-[calc(50%-0.5rem)]" />
+                 
+                 <div className="absolute center text-4xl text-white/10 font-display font-bold w-full text-center top-8 group-hover:text-yellow-500/40 transition-colors">
+                   THE
+                 </div>
+                 <div className="absolute center text-4xl text-white/10 font-display font-bold w-full text-center top-12 left-2 group-hover:text-yellow-500/40 transition-colors">
+                   VAULT
+                 </div>
+              </div>
+              <h4 className="text-xl font-display text-white group-hover:text-yellow-600 transition-colors">DIMENSION 07</h4>
+              <div className="text-gray-400 font-mono text-xs mb-3">SECTOR: STABILITY VAULT</div>
+              <p className="text-sm text-gray-500 mb-4 h-10">
+                Transactional integrity compromised. Use <span className="text-yellow-600">ACID PRINCIPLES</span> to lock reality.
+              </p>
+              <HoloButton onClick={() => onSelectLevel(7)} variant="primary" className="w-full text-sm py-2 text-yellow-600 border-yellow-600 hover:bg-yellow-600 hover:text-black">
+                ENTER RIFT
+              </HoloButton>
+           </div>
         </div>
       </div>
     </div>

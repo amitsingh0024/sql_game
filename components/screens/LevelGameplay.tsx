@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { LevelData, Mission } from '../../types';
-import { LEVEL_1, LEVEL_2, LEVEL_3, LEVEL_4 } from '../../data/levels';
+import { LEVEL_1, LEVEL_2, LEVEL_3, LEVEL_4, LEVEL_5, LEVEL_6, LEVEL_7 } from '../../data/levels';
 import { executeQuery } from '../../utils/sqlEngine';
 import { SqlTerminal } from '../ui/SqlTerminal';
 import { DataGrid } from '../ui/DataGrid';
@@ -124,6 +124,9 @@ export const LevelGameplay: React.FC<LevelGameplayProps> = ({ levelId, onExit })
         case 2: return LEVEL_2;
         case 3: return LEVEL_3;
         case 4: return LEVEL_4;
+        case 5: return LEVEL_5;
+        case 6: return LEVEL_6;
+        case 7: return LEVEL_7;
         default: return LEVEL_1;
     }
   }
@@ -229,6 +232,21 @@ export const LevelGameplay: React.FC<LevelGameplayProps> = ({ levelId, onExit })
       themeAccent = 'text-blue-400';
       themeBorder = 'border-blue-400';
       themeBg = 'bg-blue-400/10';
+  } else if (level.theme === 'FRACTAL') {
+      // Custom theme for Level 5
+      themeAccent = 'text-green-400';
+      themeBorder = 'border-green-400';
+      themeBg = 'bg-green-400/10';
+  } else if (level.theme === 'CHRONO') {
+      // Custom theme for Level 6
+      themeAccent = 'text-amber-400';
+      themeBorder = 'border-amber-400';
+      themeBg = 'bg-amber-400/10';
+  } else if (level.theme === 'VAULT') {
+      // Custom theme for Level 7
+      themeAccent = 'text-yellow-600';
+      themeBorder = 'border-yellow-600';
+      themeBg = 'bg-yellow-600/10';
   }
 
   return (

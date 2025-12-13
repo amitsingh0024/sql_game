@@ -2,12 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { LevelData, Mission } from '../../types';
 import { LEVEL_1, LEVEL_2, LEVEL_3, LEVEL_4, LEVEL_5, LEVEL_6, LEVEL_7, LEVEL_8, LEVEL_9, LEVEL_10, LEVEL_11, LEVEL_12 } from '../../data/levels';
 import { executeQuery } from '../../utils/sqlEngine';
+import { unlockNextLevel } from '../../utils/levelUnlock';
+import { getUnlockedMissions, unlockNextMission, markMissionCompleted } from '../../utils/missionUnlock';
 import { SqlTerminal } from '../ui/SqlTerminal';
 import { DataGrid } from '../ui/DataGrid';
 import { HoloButton } from '../ui/HoloButton';
 
 interface LevelGameplayProps {
   levelId: number;
+  missionIndex?: number; // Optional: start at specific mission, defaults to 0
   onExit: () => void;
 }
 
@@ -116,7 +119,7 @@ const MissionMap: React.FC<{
   );
 };
 
-export const LevelGameplay: React.FC<LevelGameplayProps> = ({ levelId, onExit }) => {
+export const LevelGameplay: React.FC<LevelGameplayProps> = ({ levelId, missionIndex: initialMissionIndex = 0, onExit }) => {
   // Load correct level data
   const getLevelData = (id: number) => {
     switch(id) {
@@ -137,8 +140,12 @@ export const LevelGameplay: React.FC<LevelGameplayProps> = ({ levelId, onExit })
   }
   const level: LevelData = getLevelData(levelId);
 
-  const [missionIndex, setMissionIndex] = useState(0);
-  const [maxUnlockedIndex, setMaxUnlockedIndex] = useState(0); // Track progress
+  const [missionIndex, setMissionIndex] = useState(initialMissionIndex);
+  const [maxUnlockedIndex, setMaxUnlockedIndex] = useState(() => {
+    // Initialize with unlocked missions from localStorage
+    const unlocked = getUnlockedMissions(levelId);
+    return Math.max(...unlocked, 0);
+  });
   
   const [queryResult, setQueryResult] = useState<any[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -185,9 +192,13 @@ export const LevelGameplay: React.FC<LevelGameplayProps> = ({ levelId, onExit })
            setMissionComplete(true);
            setFeedback(currentMission.successMessage);
            
+           // Mark mission as completed
+           markMissionCompleted(levelId, missionIndex);
+           
            // Unlock next mission immediately upon success
            if (missionIndex + 1 > maxUnlockedIndex && missionIndex + 1 < level.missions.length) {
               setMaxUnlockedIndex(missionIndex + 1);
+              unlockNextMission(levelId, missionIndex);
            }
         } else {
            setFeedback("QUERY EXECUTED BUT REALITY IS STILL UNSTABLE. CHECK OBJECTIVES.");
@@ -204,10 +215,12 @@ export const LevelGameplay: React.FC<LevelGameplayProps> = ({ levelId, onExit })
     if (nextIdx < level.missions.length) {
       if (nextIdx > maxUnlockedIndex) {
         setMaxUnlockedIndex(nextIdx);
+        unlockNextMission(levelId, missionIndex);
       }
       setMissionIndex(nextIdx);
     } else {
-      // Level Complete
+      // Level Complete - unlock next level
+      unlockNextLevel(levelId);
       onExit();
     }
   };
@@ -292,7 +305,7 @@ export const LevelGameplay: React.FC<LevelGameplayProps> = ({ levelId, onExit })
           </div>
           {isBoss && <div className="bg-red-600 text-black font-bold px-3 py-1 text-xs animate-pulse rounded-full">BOSS BATTLE ACTIVE</div>}
         </div>
-        <HoloButton onClick={onExit} variant="ghost" className="px-4 py-1 text-xs">ABORT MISSION</HoloButton>
+        <HoloButton onClick={onExit} variant="ghost" className="px-4 py-1 text-xs">BACK TO MISSIONS</HoloButton>
       </header>
 
       {/* Main Content Split */}
@@ -362,7 +375,11 @@ export const LevelGameplay: React.FC<LevelGameplayProps> = ({ levelId, onExit })
                 {isExecuting && <span className="text-xs font-mono text-neon-yellow animate-pulse">EXECUTING...</span>}
              </div>
              <div className="flex-1 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
-               <SqlTerminal onExecute={handleExecute} isExecuting={isExecuting} />
+               <SqlTerminal 
+                 key={`terminal-${levelId}-${missionIndex}`}
+                 onExecute={handleExecute} 
+                 isExecuting={isExecuting} 
+               />
              </div>
            </div>
 

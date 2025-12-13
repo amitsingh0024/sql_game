@@ -375,7 +375,11 @@ export const LevelGameplay: React.FC<LevelGameplayProps> = ({ levelId, missionIn
                 {isExecuting && <span className="text-xs font-mono text-neon-yellow animate-pulse">EXECUTING...</span>}
              </div>
              <div className="flex-1 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
-               <SqlTerminal onExecute={handleExecute} isExecuting={isExecuting} />
+               <SqlTerminal 
+                 key={`terminal-${levelId}-${missionIndex}`}
+                 onExecute={handleExecute} 
+                 isExecuting={isExecuting} 
+               />
              </div>
            </div>
 

@@ -54,7 +54,7 @@ const App: React.FC = () => {
         return (
             <LevelSelect 
               onBack={() => setGameState(GameState.SPLASH)}
-              onSelectLevel={handleLevelSelect}
+              onSelectLevel={handleLevelSelect} 
               unlockedLevels={unlockedLevels}
             />
         );
@@ -65,12 +65,12 @@ const App: React.FC = () => {
             levelId={activeLevelId}
             onBack={handleBackToLevels}
             onSelectMission={handleMissionSelect}
-          />
+            />
         );
       case GameState.PLAYING:
         return (
           <LevelGameplay 
-            levelId={activeLevelId}
+            levelId={activeLevelId} 
             missionIndex={activeMissionIndex}
             onExit={handleMissionComplete}
           />

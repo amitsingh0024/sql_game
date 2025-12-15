@@ -64,3 +64,4 @@ export const resetProgress = (): void => {
   localStorage.removeItem(UNLOCKED_LEVELS_KEY);
 };
 
+

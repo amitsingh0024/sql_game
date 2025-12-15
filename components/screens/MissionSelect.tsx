@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { LevelData, Mission } from '../../types';
 import { LEVEL_1, LEVEL_2, LEVEL_3, LEVEL_4, LEVEL_5, LEVEL_6, LEVEL_7, LEVEL_8, LEVEL_9, LEVEL_10, LEVEL_11, LEVEL_12 } from '../../data/levels';
 import { getUnlockedMissions, getCompletedMissions } from '../../utils/missionUnlock';
+import { getLevelStability } from '../../utils/playerStats';
 import { HoloButton } from '../ui/HoloButton';
 import { GlitchText } from '../ui/GlitchText';
+import { StabilityIndicator } from '../ui/StabilityIndicator';
 
 interface MissionSelectProps {
   levelId: number;
@@ -150,13 +152,18 @@ export const MissionSelect: React.FC<MissionSelectProps> = ({ levelId, onBack, o
       <div className="relative z-10 p-6 md:p-12">
         {/* Header */}
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-          <div>
+          <div className="flex-1">
             <GlitchText text={level.title} as="h1" className={`text-4xl md:text-6xl ${theme.accent} mb-2`} />
             <p className="text-gray-400 font-mono text-sm">{level.description}</p>
           </div>
-          <HoloButton onClick={onBack} variant="ghost" className="px-6 py-2 text-sm">
-            BACK TO LEVELS
-          </HoloButton>
+          <div className="flex items-center gap-4">
+            <div className="hidden md:block min-w-[200px]">
+              <StabilityIndicator size="small" levelId={levelId} />
+            </div>
+            <HoloButton onClick={onBack} variant="ghost" className="px-6 py-2 text-sm">
+              BACK TO LEVELS
+            </HoloButton>
+          </div>
         </header>
 
         {/* Mission List */}

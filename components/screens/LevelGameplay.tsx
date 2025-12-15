@@ -3,10 +3,12 @@ import { LevelData, Mission } from '../../types';
 import { LEVEL_1, LEVEL_2, LEVEL_3, LEVEL_4, LEVEL_5, LEVEL_6, LEVEL_7, LEVEL_8, LEVEL_9, LEVEL_10, LEVEL_11, LEVEL_12 } from '../../data/levels';
 import { executeQuery } from '../../utils/sqlEngine';
 import { unlockNextLevel } from '../../utils/levelUnlock';
-import { getUnlockedMissions, unlockNextMission, markMissionCompleted } from '../../utils/missionUnlock';
+import { getUnlockedMissions, unlockNextMission, markMissionCompleted, getCompletedMissions } from '../../utils/missionUnlock';
+import { awardMissionReward, awardLevelCompletionBonus, getPlayerStats, getLevelStability } from '../../utils/playerStats';
 import { SqlTerminal } from '../ui/SqlTerminal';
 import { DataGrid } from '../ui/DataGrid';
 import { HoloButton } from '../ui/HoloButton';
+import { StabilityIndicator } from '../ui/StabilityIndicator';
 
 interface LevelGameplayProps {
   levelId: number;
@@ -14,7 +16,14 @@ interface LevelGameplayProps {
   onExit: () => void;
 }
 
-const SuccessOverlay: React.FC<{ message: string; onNext: () => void; isLast: boolean }> = ({ message, onNext, isLast }) => (
+const SuccessOverlay: React.FC<{ 
+  message: string; 
+  onNext: () => void; 
+  isLast: boolean;
+  xpReward: number;
+  stabilityReward: number;
+  isReplay?: boolean;
+}> = ({ message, onNext, isLast, xpReward, stabilityReward, isReplay = false }) => (
   <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
     <div className="w-full max-w-lg mx-4 border-2 border-neon-cyan bg-void-panel relative overflow-hidden shadow-[0_0_50px_rgba(0,243,255,0.3)]">
       {/* Animated background strip */}
@@ -22,7 +31,7 @@ const SuccessOverlay: React.FC<{ message: string; onNext: () => void; isLast: bo
       
       <div className="relative z-10 p-8 flex flex-col items-center text-center gap-6">
          <h2 className="text-4xl md:text-5xl font-display font-black italic text-white drop-shadow-[0_0_10px_rgba(0,243,255,0.8)] animate-pulse tracking-widest">
-           MISSION COMPLETE
+           {isReplay ? "MISSION REPLAY" : "MISSION COMPLETE"}
          </h2>
          
          <div className="h-px w-3/4 bg-gradient-to-r from-transparent via-neon-cyan to-transparent"></div>
@@ -31,16 +40,22 @@ const SuccessOverlay: React.FC<{ message: string; onNext: () => void; isLast: bo
            {message}
          </p>
 
-         <div className="flex flex-wrap justify-center gap-4 mt-4 w-full">
-             <div className="flex-1 min-w-[120px] text-xs font-mono text-neon-cyan border border-neon-cyan/50 bg-neon-cyan/10 px-4 py-2 rounded flex flex-col gap-1">
-                <span className="text-gray-400">XP REWARD</span>
-                <span className="font-bold text-lg">+150 XP</span>
-             </div>
-             <div className="flex-1 min-w-[120px] text-xs font-mono text-neon-purple border border-neon-purple/50 bg-neon-purple/10 px-4 py-2 rounded flex flex-col gap-1">
-                <span className="text-gray-400">SYSTEM STABILITY</span>
-                <span className="font-bold text-lg">+8%</span>
-             </div>
-         </div>
+         {isReplay ? (
+           <div className="w-full p-4 bg-gray-800/50 border border-gray-700 rounded text-xs font-mono text-gray-400">
+             Mission already completed. No rewards awarded for replay.
+           </div>
+         ) : (
+           <div className="flex flex-wrap justify-center gap-4 mt-4 w-full">
+               <div className="flex-1 min-w-[120px] text-xs font-mono text-neon-cyan border border-neon-cyan/50 bg-neon-cyan/10 px-4 py-2 rounded flex flex-col gap-1">
+                  <span className="text-gray-400">XP REWARD</span>
+                  <span className="font-bold text-lg">+{xpReward} XP</span>
+               </div>
+               <div className="flex-1 min-w-[120px] text-xs font-mono text-neon-purple border border-neon-purple/50 bg-neon-purple/10 px-4 py-2 rounded flex flex-col gap-1">
+                  <span className="text-gray-400">SYSTEM STABILITY</span>
+                  <span className="font-bold text-lg">+{stabilityReward}%</span>
+               </div>
+           </div>
+         )}
 
          <HoloButton onClick={onNext} className="w-full mt-6 text-lg py-4 animate-bounce">
            {isLast ? "SECTOR CLEARED >>" : "NEXT MISSION >>"}
@@ -154,6 +169,7 @@ export const LevelGameplay: React.FC<LevelGameplayProps> = ({ levelId, missionIn
   const [isBoss, setIsBoss] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
   const [showHint, setShowHint] = useState(false);
+  const [missionRewards, setMissionRewards] = useState<{ xp: number; stability: number } | null>(null);
 
   const currentMission: Mission = level.missions[missionIndex];
   
@@ -168,6 +184,7 @@ export const LevelGameplay: React.FC<LevelGameplayProps> = ({ levelId, missionIn
     setMissionComplete(false);
     setIsBoss(currentMission.id.includes("BOSS"));
     setShowHint(false);
+    setMissionRewards(null);
   }, [missionIndex, currentMission]);
 
   const handleExecute = (code: string) => {
@@ -192,8 +209,21 @@ export const LevelGameplay: React.FC<LevelGameplayProps> = ({ levelId, missionIn
            setMissionComplete(true);
            setFeedback(currentMission.successMessage);
            
-           // Mark mission as completed
+           // Check if mission was already completed
+           const completedMissions = getCompletedMissions(levelId);
+           const isAlreadyCompleted = completedMissions.includes(missionIndex);
+           
+           // Mark mission as completed (this is idempotent - won't duplicate)
            markMissionCompleted(levelId, missionIndex);
+           
+           // Only award XP and stability if this is the first time completing this mission
+           if (!isAlreadyCompleted) {
+             const rewards = awardMissionReward(levelId, missionIndex, level.missions.length, isBoss);
+             setMissionRewards(rewards);
+           } else {
+             // Show zero rewards for replay
+             setMissionRewards({ xp: 0, stability: 0 });
+           }
            
            // Unlock next mission immediately upon success
            if (missionIndex + 1 > maxUnlockedIndex && missionIndex + 1 < level.missions.length) {
@@ -219,7 +249,15 @@ export const LevelGameplay: React.FC<LevelGameplayProps> = ({ levelId, missionIn
       }
       setMissionIndex(nextIdx);
     } else {
-      // Level Complete - unlock next level
+      // Level Complete - check if this is the first time completing the level
+      const completedMissions = getCompletedMissions(levelId);
+      const wasLevelAlreadyComplete = completedMissions.length >= level.missions.length;
+      
+      // Only award completion bonus if this is the first time completing the level
+      if (!wasLevelAlreadyComplete) {
+        awardLevelCompletionBonus(levelId);
+      }
+      
       unlockNextLevel(levelId);
       onExit();
     }
@@ -286,17 +324,20 @@ export const LevelGameplay: React.FC<LevelGameplayProps> = ({ levelId, missionIn
     <div className={`relative flex flex-col h-screen w-full bg-void-dark text-white overflow-hidden ${isBoss ? 'border-[4px] border-red-600 animate-pulse' : ''}`}>
       
       {/* SUCCESS OVERLAY */}
-      {missionComplete && (
+      {missionComplete && missionRewards && (
         <SuccessOverlay 
           message={feedback || "Mission Complete"} 
           onNext={nextMission} 
-          isLast={missionIndex === level.missions.length - 1} 
+          isLast={missionIndex === level.missions.length - 1}
+          xpReward={missionRewards.xp}
+          stabilityReward={missionRewards.stability}
+          isReplay={missionRewards.xp === 0 && missionRewards.stability === 0}
         />
       )}
 
       {/* Top Bar */}
-      <header className="flex-none h-16 border-b border-white/10 flex items-center justify-between px-6 bg-void-panel/80 backdrop-blur z-20">
-        <div className="flex items-center gap-4">
+      <header className="flex-none h-auto border-b border-white/10 flex flex-col md:flex-row items-start md:items-center justify-between px-6 py-3 bg-void-panel/80 backdrop-blur z-20 gap-3">
+        <div className="flex items-center gap-4 flex-1">
           <div className="flex flex-col">
              <div className="text-[10px] font-mono text-gray-500 uppercase tracking-widest">CURRENT SECTOR</div>
              <div className={`font-display text-xl ${isBoss ? 'text-red-500 glitch-text' : themeAccent}`} data-text={level.title}>
@@ -305,7 +346,12 @@ export const LevelGameplay: React.FC<LevelGameplayProps> = ({ levelId, missionIn
           </div>
           {isBoss && <div className="bg-red-600 text-black font-bold px-3 py-1 text-xs animate-pulse rounded-full">BOSS BATTLE ACTIVE</div>}
         </div>
-        <HoloButton onClick={onExit} variant="ghost" className="px-4 py-1 text-xs">BACK TO MISSIONS</HoloButton>
+        <div className="flex items-center gap-3">
+          <div className="hidden md:block">
+            <StabilityIndicator size="small" showLabel={false} levelId={levelId} />
+          </div>
+          <HoloButton onClick={onExit} variant="ghost" className="px-4 py-1 text-xs">BACK TO MISSIONS</HoloButton>
+        </div>
       </header>
 
       {/* Main Content Split */}

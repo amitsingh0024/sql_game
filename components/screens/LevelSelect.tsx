@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { HoloButton } from '../ui/HoloButton';
 import { GlitchText } from '../ui/GlitchText';
+import { StabilityIndicator } from '../ui/StabilityIndicator';
 import { GlitchReport, SquadMember } from '../../types';
+import { getPlayerStats, getRankProgress, getLevelStability } from '../../utils/playerStats';
 
 interface LevelSelectProps {
   onBack: () => void;
@@ -28,10 +30,20 @@ const DEFAULT_GLITCH_REPORT: GlitchReport = {
 export const LevelSelect: React.FC<LevelSelectProps> = ({ onBack, onSelectLevel, unlockedLevels }) => {
   // Use static glitch report - can be updated manually when deploying
   const [activeAnomaly] = useState<GlitchReport | null>(DEFAULT_GLITCH_REPORT);
+  const [playerStats, setPlayerStats] = useState(getPlayerStats());
+  const [rankProgress, setRankProgress] = useState(getRankProgress(playerStats.powerLevel));
+
+  // Refresh stats when component mounts or when returning to this screen
+  useEffect(() => {
+    const stats = getPlayerStats();
+    setPlayerStats(stats);
+    setRankProgress(getRankProgress(stats.powerLevel));
+  }, [unlockedLevels]); // Refresh when unlockedLevels changes (after completing missions)
 
   const isLevelUnlocked = (levelId: number): boolean => {
     return unlockedLevels.includes(levelId);
   };
+
 
   return (
     <div className="relative min-h-screen w-full flex flex-col md:flex-row overflow-hidden bg-void-dark">
@@ -61,11 +73,21 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({ onBack, onSelectLevel,
             <h3 className="text-neon-cyan font-display text-xl mb-4 tracking-widest">YOU</h3>
             <div className="bg-black/40 p-3 rounded border border-neon-cyan/30">
                <div className="text-xs text-gray-400 font-mono mb-1">CURRENT RANK</div>
-               <div className="text-lg text-white font-bold font-display">NOVICE WEAVER</div>
+               <div className="text-lg text-white font-bold font-display">{playerStats.rank}</div>
                <div className="w-full h-1 bg-gray-800 mt-2 rounded-full overflow-hidden">
-                 <div className="w-[30%] h-full bg-neon-cyan" />
+                 <div 
+                   className="h-full bg-neon-cyan transition-all duration-500" 
+                   style={{ 
+                     width: rankProgress.max === Infinity 
+                       ? '100%' 
+                       : `${(rankProgress.current / rankProgress.max) * 100}%` 
+                   }} 
+                 />
                </div>
-               <div className="text-[10px] text-right text-neon-cyan mt-1">XP: 30/100</div>
+               <div className="text-[10px] text-right text-neon-cyan mt-1">
+                 XP: {rankProgress.current}{rankProgress.max !== Infinity ? `/${rankProgress.max}` : '+'} 
+                 {rankProgress.nextRank && ` → ${rankProgress.nextRank}`}
+               </div>
             </div>
             <div className="mt-4 text-xs font-mono text-gray-500 italic">
                "Dormant power detected. Complete rifts to awaken."

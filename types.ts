@@ -11,7 +11,8 @@ export enum GameState {
 export interface PlayerStats {
   rank: string;
   powerLevel: number;
-  realityStability: number;
+  realityStability: number; // Deprecated: kept for backward compatibility
+  levelStability?: Record<number, number>; // Stability per level: { 1: 45, 2: 30, ... }
 }
 
 export interface GlitchReport {

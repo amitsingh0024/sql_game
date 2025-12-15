@@ -213,8 +213,9 @@ export const LEVEL_1: LevelData = {
         ]
       },
       expectedResult: (data) => {
-        const keys = Object.keys(data[0]);
-        return keys.includes('Identity') && keys.includes('Sector');
+        if (!data || data.length === 0) return false;
+        const keys = Object.keys(data[0]).map(k => k.toLowerCase());
+        return keys.includes('identity') && keys.includes('sector');
       },
       successMessage: "INTERFACE CLARIFIED. Humans can now understand the data stream."
     },
@@ -334,10 +335,23 @@ export const LEVEL_1: LevelData = {
       expectedResult: (data) => {
         // Should have: Citizen_A (35), Citizen_D (28), Citizen_E excluded (threat > 5)
         // Ordered DESC: Citizen_A (35), Citizen_D (28)
-        if (data.length !== 2) return false;
-        return data[0].name === 'Citizen_A' && data[0].age === 35 &&
-               data[1].name === 'Citizen_D' && data[1].age === 28 &&
-               data.every(d => d.is_corrupted === 0 && d.age !== null && d.threat_level <= 5);
+        if (!data || data.length !== 2) return false;
+        // Check that we have exactly the right citizens in the right order
+        const names = data.map(d => d.name);
+        const ages = data.map(d => d.age);
+        // Must have Citizen_A first (age 35) and Citizen_D second (age 28)
+        const correctOrder = names[0] === 'Citizen_A' && ages[0] === 35 &&
+                            names[1] === 'Citizen_D' && ages[1] === 28;
+        // All rows must meet the criteria
+        const allValid = data.every(d => 
+          d.is_corrupted === 0 && 
+          d.age !== null && 
+          d.age !== undefined &&
+          d.threat_level !== null &&
+          d.threat_level !== undefined &&
+          d.threat_level <= 5
+        );
+        return correctOrder && allValid;
       },
       successMessage: "QUERY BEAST SHATTERED. The perfectly structured truth has destroyed the chaos.\n\nZERO: 'I... I can see everything now. The district is restored.'\n\nLEVEL COMPLETE. DATA VISION UNLOCKED."
     }

@@ -2,7 +2,7 @@ import { PlayerStats } from '../types';
 import { getCompletedMissions } from './missionUnlock';
 
 const PLAYER_STATS_KEY = 'sql_game_player_stats';
-const TOTAL_MISSIONS_PER_LEVEL = 11; // All levels have 11 missions
+const TOTAL_MISSIONS_PER_LEVEL = 12; // All levels have 12 missions (10 regular + 2 boss)
 
 // Rank thresholds based on XP
 // Designed so completing all 12 levels (~32,000 XP) guarantees reaching THE ARCHITECT

@@ -170,6 +170,7 @@ export const LevelGameplay: React.FC<LevelGameplayProps> = ({ levelId, missionIn
   const [isExecuting, setIsExecuting] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [missionRewards, setMissionRewards] = useState<{ xp: number; stability: number } | null>(null);
+  const [wasLevelCompleteBeforeCurrentMission, setWasLevelCompleteBeforeCurrentMission] = useState<boolean>(false);
 
   const currentMission: Mission = level.missions[missionIndex];
   
@@ -185,6 +186,7 @@ export const LevelGameplay: React.FC<LevelGameplayProps> = ({ levelId, missionIn
     setIsBoss(currentMission.id.includes("BOSS"));
     setShowHint(false);
     setMissionRewards(null);
+    setWasLevelCompleteBeforeCurrentMission(false);
   }, [missionIndex, currentMission]);
 
   const handleExecute = (code: string) => {
@@ -209,9 +211,16 @@ export const LevelGameplay: React.FC<LevelGameplayProps> = ({ levelId, missionIn
            setMissionComplete(true);
            setFeedback(currentMission.successMessage);
            
-           // Check if mission was already completed
-           const completedMissions = getCompletedMissions(levelId);
-           const isAlreadyCompleted = completedMissions.includes(missionIndex);
+           // Check if mission was already completed BEFORE marking it
+           const completedMissionsBefore = getCompletedMissions(levelId);
+           const isAlreadyCompleted = completedMissionsBefore.includes(missionIndex);
+           
+           // Check if level was already complete BEFORE marking this mission
+           // This is important for the final mission to correctly detect first-time level completion
+           const wasLevelAlreadyComplete = completedMissionsBefore.length >= level.missions.length;
+           
+           // Store this state for use in nextMission() when checking level completion bonus
+           setWasLevelCompleteBeforeCurrentMission(wasLevelAlreadyComplete);
            
            // Mark mission as completed (this is idempotent - won't duplicate)
            markMissionCompleted(levelId, missionIndex);
@@ -249,9 +258,9 @@ export const LevelGameplay: React.FC<LevelGameplayProps> = ({ levelId, missionIn
       }
       setMissionIndex(nextIdx);
     } else {
-      // Level Complete - check if this is the first time completing the level
-      const completedMissions = getCompletedMissions(levelId);
-      const wasLevelAlreadyComplete = completedMissions.length >= level.missions.length;
+      // Level Complete - use the state we stored BEFORE marking the mission as completed
+      // This correctly detects if the level was already complete before this mission
+      const wasLevelAlreadyComplete = wasLevelCompleteBeforeCurrentMission;
       
       // Only award completion bonus if this is the first time completing the level
       if (!wasLevelAlreadyComplete) {

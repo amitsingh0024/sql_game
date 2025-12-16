@@ -3,22 +3,14 @@
 ## Issue
 The error `querySrv ENOTFOUND _mongodb._tcp.cluster.mongodb.net` indicates the MongoDB cluster name in your connection string is incorrect.
 
-## Your Current URI (from earlier conversation)
-```
-mongodb+srv://aakashshivanshu5_db_user:jxtlDZdDy6WfU4X8@cluster.mongodb.net/sql_game?retryWrites=true&w=majority
-```
-
 ## Problem
-The cluster name `cluster.mongodb.net` is incorrect. Based on your original connection string, it should be:
-```
-cluster0.dibnaxf.mongodb.net
-```
+The cluster name in your MongoDB URI might be incorrect. The error `querySrv ENOTFOUND` indicates DNS cannot resolve the cluster name.
 
 ## Correct MongoDB URI Format
-Update your `.env` file with:
+Update your `.env` file with your MongoDB Atlas connection string:
 
 ```env
-MONGODB_URI=mongodb+srv://aakashshivanshu5_db_user:jxtlDZdDy6WfU4X8@cluster0.dibnaxf.mongodb.net/sql_game?retryWrites=true&w=majority
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster-name>.mongodb.net/<database>?retryWrites=true&w=majority
 ```
 
 ## How to Find Your Correct Cluster Name
@@ -36,7 +28,7 @@ mongodb+srv://<username>:<password>@<cluster-name>.mongodb.net/<database>?retryW
 
 ## Common Issues
 
-1. **Wrong cluster name**: Make sure you use the full cluster name (e.g., `cluster0.dibnaxf.mongodb.net`)
+1. **Wrong cluster name**: Make sure you use the full cluster name from MongoDB Atlas
 2. **Network Access**: Ensure your IP is whitelisted in MongoDB Atlas (or use `0.0.0.0/0` for testing)
 3. **Database name**: Make sure `/sql_game` is included in the URI
 4. **Password special characters**: If your password has special characters, URL encode them

@@ -46,7 +46,7 @@ app.use('/api', healthRoutes);
 
 // API Versioning
 // Add version info to response headers for all versioned routes
-app.use(API_CONFIG.getVersionPath(), (req, res, next) => {
+app.use(API_CONFIG.getVersionPath(), (_req, res, next) => {
   res.setHeader('X-API-Version', API_CONFIG.CURRENT_VERSION);
   next();
 });

@@ -54,9 +54,12 @@ export const authController = {
         });
       }
 
+      // Fetch full user data from MongoDB
+      const user = await authService.getUserById(req.user.id);
+
       res.json({
         success: true,
-        data: { user: req.user },
+        data: { user },
       });
     } catch (error) {
       next(error);

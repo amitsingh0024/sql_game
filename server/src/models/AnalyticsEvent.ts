@@ -6,7 +6,6 @@ const analyticsEventSchema = new Schema<IAnalyticsEvent>(
     userId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
-      index: true,
     },
     eventType: {
       type: String,

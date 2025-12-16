@@ -80,8 +80,7 @@ const userSchema = new Schema<IUser>(
 );
 
 // Indexes
-userSchema.index({ email: 1 });
-userSchema.index({ username: 1 });
+// Note: email and username already have indexes from 'unique: true'
 userSchema.index({ userRole: 1 });
 userSchema.index({ isActive: 1 });
 userSchema.index({ associated_friend_id: 1 });

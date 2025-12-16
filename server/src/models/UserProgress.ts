@@ -7,7 +7,6 @@ const userProgressSchema = new Schema<IUserProgress>(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      index: true,
     },
     levelId: {
       type: Number,

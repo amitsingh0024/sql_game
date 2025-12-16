@@ -2,6 +2,9 @@ import mongoose from 'mongoose';
 import { env } from './env.js';
 import logger from '../utils/logger.js';
 
+// Import all models to ensure they are registered with Mongoose
+import '../models/index.js';
+
 class Database {
   private static instance: Database;
   private isConnected: boolean = false;

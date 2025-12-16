@@ -8,7 +8,6 @@ const userStatsSchema = new Schema<IUserStats>(
       ref: 'User',
       required: true,
       unique: true,
-      index: true,
     },
     totalXp: {
       type: Number,
@@ -51,7 +50,7 @@ const userStatsSchema = new Schema<IUserStats>(
 
 // Index for leaderboard queries
 userStatsSchema.index({ totalXp: -1 });
-userStatsSchema.index({ userId: 1 });
+// Note: userId already has an index from 'unique: true'
 
 export const UserStats = mongoose.model<IUserStats>('UserStats', userStatsSchema);
 

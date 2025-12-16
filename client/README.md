@@ -84,10 +84,13 @@ The server serves the built static files from the `dist` directory and handles c
 
 ```
 sql_game/
-├── components/       # React components
-├── data/            # Level and mission data
-├── utils/           # Utility functions
-├── server.js        # Express server for production
-├── render.yaml      # Render deployment configuration
-└── package.json     # Dependencies and scripts
+├── client/          # Client application
+│   ├── components/  # React components
+│   ├── data/       # Level and mission data
+│   ├── utils/      # Utility functions
+│   ├── questions/  # CSV question files
+│   ├── server.js   # Express server for production
+│   ├── render.yaml # Render deployment configuration
+│   └── package.json # Dependencies and scripts
+└── server/         # Backend server (if applicable)
 ```

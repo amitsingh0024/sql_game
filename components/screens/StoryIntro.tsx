@@ -27,13 +27,18 @@ export const StoryIntro: React.FC<StoryIntroProps> = ({ onComplete }) => {
   const currentLine = DIALOGUE[index];
 
   useEffect(() => {
+    const text = currentLine.text; // Capture text to avoid dependency issues
     setDisplayedText("");
     setIsTyping(true);
+    
+    // Use a ref to track the built text to avoid state update race conditions
+    let builtText = "";
     let charIndex = 0;
     
     const interval = setInterval(() => {
-      if (charIndex < currentLine.text.length) {
-        setDisplayedText(prev => prev + currentLine.text[charIndex]);
+      if (charIndex < text.length) {
+        builtText += text[charIndex];
+        setDisplayedText(builtText);
         charIndex++;
       } else {
         setIsTyping(false);
@@ -42,7 +47,7 @@ export const StoryIntro: React.FC<StoryIntroProps> = ({ onComplete }) => {
     }, 25);
 
     return () => clearInterval(interval);
-  }, [index, currentLine]);
+  }, [index]); // Only depend on index, not currentLine object
 
   const handleNext = () => {
     if (isTyping) {

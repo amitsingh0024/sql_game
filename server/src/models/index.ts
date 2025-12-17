@@ -27,3 +27,6 @@ export { AnalyticsEvent } from './AnalyticsEvent.js';
 // Friend Requests
 export { FriendRequest } from './FriendRequest.js';
 
+// User Settings
+export { UserSettings } from './UserSettings.js';
+

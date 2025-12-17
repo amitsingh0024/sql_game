@@ -177,6 +177,52 @@ export interface IFriendRequest extends Document {
   updatedAt?: Date;
 }
 
+export interface IUserSettings extends Document {
+  _id: Types.ObjectId;
+  userId: Types.ObjectId; // Reference to User (unique)
+  
+  // Game preferences
+  theme: 'light' | 'dark' | 'auto';
+  soundEnabled: boolean;
+  musicEnabled: boolean;
+  soundVolume: number; // 0-100
+  musicVolume: number; // 0-100
+  
+  // Display preferences
+  language: string; // e.g., 'en', 'es', 'fr'
+  timezone: string; // e.g., 'UTC', 'America/New_York'
+  dateFormat: string; // e.g., 'MM/DD/YYYY', 'DD/MM/YYYY'
+  timeFormat: '12h' | '24h';
+  
+  // Notification preferences
+  emailNotifications: boolean;
+  pushNotifications: boolean;
+  friendRequestNotifications: boolean;
+  challengeInviteNotifications: boolean;
+  achievementNotifications: boolean;
+  leaderboardNotifications: boolean;
+  
+  // Privacy settings
+  profileVisibility: 'public' | 'friends' | 'private';
+  showEmail: boolean;
+  showLevel: boolean;
+  showXp: boolean;
+  allowFriendRequests: boolean;
+  
+  // Gameplay preferences
+  defaultDifficulty: 'easy' | 'medium' | 'hard' | 'expert';
+  autoSaveProgress: boolean;
+  showHints: boolean;
+  showTutorials: boolean;
+  
+  // Challenge preferences
+  autoAcceptChallenges: boolean;
+  challengeReminderEnabled: boolean;
+  
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
 export interface AuthRequest extends Request {
   user?: {
     id: string;

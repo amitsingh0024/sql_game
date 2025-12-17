@@ -6,11 +6,11 @@ export const authController = {
   async register(req: Request, res: Response, next: NextFunction) {
     try {
       const { username, email, password } = req.body;
-      const user = await authService.register(username, email, password);
+      const result = await authService.register(username, email, password);
 
       res.status(201).json({
         success: true,
-        data: { user },
+        data: result,
       });
     } catch (error) {
       next(error);

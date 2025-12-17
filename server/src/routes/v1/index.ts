@@ -10,6 +10,7 @@ import gameConfigRoutes from './game-config.routes.js';
 import leaderboardRoutes from './leaderboard.routes.js';
 import analyticsRoutes from './analytics.routes.js';
 import privacyRoutes from './privacy.routes.js';
+import executionRoutes from './execution.routes.js';
 
 const router = Router();
 
@@ -25,6 +26,7 @@ router.use('/game-config', gameConfigRoutes);
 router.use('/leaderboard', leaderboardRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/privacy', privacyRoutes);
+router.use('/execute', executionRoutes);
 
 export default router;
 

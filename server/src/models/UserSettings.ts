@@ -8,7 +8,6 @@ const userSettingsSchema = new Schema<IUserSettings>(
       ref: 'User',
       required: true,
       unique: true,
-      index: true,
     },
     
     // Game preferences
@@ -141,8 +140,7 @@ const userSettingsSchema = new Schema<IUserSettings>(
   }
 );
 
-// Index
-userSettingsSchema.index({ userId: 1 }, { unique: true });
+// Note: userId already has an index from 'unique: true'
 
 export const UserSettings = mongoose.model<IUserSettings>('UserSettings', userSettingsSchema);
 

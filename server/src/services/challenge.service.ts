@@ -2,6 +2,7 @@ import { Challenges } from '../models/Challenges.js';
 import { User } from '../models/User.js';
 import { Questions } from '../models/Questions.js';
 import { NotFoundError, ConflictError, ForbiddenError, ValidationError } from '../utils/errors.js';
+import { validateAndConvertObjectId, validateObjectIdArray } from '../utils/validation.js';
 import logger from '../utils/logger.js';
 import { Types } from 'mongoose';
 
@@ -37,7 +38,9 @@ export class ChallengeService {
       if (!challengeData.opponent_id) {
         throw new ValidationError('One-on-one challenges require an opponent_id');
       }
-      const opponent = await User.findById(challengeData.opponent_id);
+      // Validate ObjectId format
+      const opponentObjectId = validateAndConvertObjectId(challengeData.opponent_id, 'opponent_id');
+      const opponent = await User.findById(opponentObjectId);
       if (!opponent) {
         throw new NotFoundError('Opponent not found');
       }
@@ -104,8 +107,8 @@ export class ChallengeService {
       enrolled_users: challengeData.challenge_mode === 'one_on_one' 
         ? [user._id, new Types.ObjectId(challengeData.opponent_id!)]
         : [user._id],
-      question_ids: challengeData.question_ids?.map(id => new Types.ObjectId(id)),
-      opponent_id: challengeData.opponent_id ? new Types.ObjectId(challengeData.opponent_id) : undefined,
+      question_ids: challengeData.question_ids?.map(id => validateAndConvertObjectId(id, 'question_id')),
+      opponent_id: challengeData.opponent_id ? validateAndConvertObjectId(challengeData.opponent_id, 'opponent_id') : undefined,
       challenge_status: 'pending',
     });
 
@@ -166,7 +169,8 @@ export class ChallengeService {
   }
 
   async getChallengeById(challengeId: string) {
-    const challenge = await Challenges.findById(challengeId)
+    const validId = validateAndConvertObjectId(challengeId, 'challengeId');
+    const challenge = await Challenges.findById(validId)
       .populate('created_by', 'username level xp')
       .populate('enrolled_users', 'username level xp')
       .populate('opponent_id', 'username level xp')
@@ -180,6 +184,10 @@ export class ChallengeService {
   }
 
   async getChallengeByRoomCode(roomCode: string) {
+    // Validate room code format (alphanumeric, uppercase, with ROOM- prefix)
+    if (!roomCode || typeof roomCode !== 'string' || !/^ROOM-[A-Z0-9]+$/.test(roomCode)) {
+      throw new ValidationError('Invalid room code format');
+    }
     const challenge = await Challenges.findOne({ room_code: roomCode })
       .populate('created_by', 'username level xp')
       .populate('enrolled_users', 'username level xp')
@@ -193,8 +201,10 @@ export class ChallengeService {
   }
 
   async enrollInChallenge(userId: string, challengeId: string) {
-    const user = await User.findById(userId);
-    const challenge = await Challenges.findById(challengeId);
+    const validUserId = validateAndConvertObjectId(userId, 'userId');
+    const validChallengeId = validateAndConvertObjectId(challengeId, 'challengeId');
+    const user = await User.findById(validUserId);
+    const challenge = await Challenges.findById(validChallengeId);
 
     if (!user) {
       throw new NotFoundError('User not found');
@@ -205,7 +215,7 @@ export class ChallengeService {
     }
 
     // Check if already enrolled
-    if (challenge.enrolled_users.some(id => id.toString() === userId)) {
+    if (challenge.enrolled_users.some(id => id.toString() === validUserId.toString())) {
       throw new ConflictError('Already enrolled in this challenge');
     }
 
@@ -249,7 +259,7 @@ export class ChallengeService {
       challenge.user_progress = new Map();
     }
     const userProgressMap = challenge.user_progress as Map<string, any>;
-    userProgressMap.set(userId, {
+    userProgressMap.set(validUserId.toString(), {
       userId: user._id,
       progress: 0,
       questions_completed: 0,
@@ -267,8 +277,10 @@ export class ChallengeService {
   }
 
   async leaveChallenge(userId: string, challengeId: string) {
-    const user = await User.findById(userId);
-    const challenge = await Challenges.findById(challengeId);
+    const validUserId = validateAndConvertObjectId(userId, 'userId');
+    const validChallengeId = validateAndConvertObjectId(challengeId, 'challengeId');
+    const user = await User.findById(validUserId);
+    const challenge = await Challenges.findById(validChallengeId);
 
     if (!user) {
       throw new NotFoundError('User not found');
@@ -305,7 +317,7 @@ export class ChallengeService {
     // Remove user progress
     if (challenge.user_progress) {
       const userProgressMap = challenge.user_progress as Map<string, any>;
-      userProgressMap.delete(userId);
+      userProgressMap.delete(validUserId.toString());
       challenge.user_progress = userProgressMap;
       await challenge.save();
     }
@@ -325,8 +337,10 @@ export class ChallengeService {
       completed?: boolean;
     }
   ) {
-    const user = await User.findById(userId);
-    const challenge = await Challenges.findById(challengeId);
+    const validUserId = validateAndConvertObjectId(userId, 'userId');
+    const validChallengeId = validateAndConvertObjectId(challengeId, 'challengeId');
+    const user = await User.findById(validUserId);
+    const challenge = await Challenges.findById(validChallengeId);
 
     if (!user) {
       throw new NotFoundError('User not found');
@@ -337,7 +351,7 @@ export class ChallengeService {
     }
 
     // Check if enrolled
-    if (!challenge.enrolled_users.some(id => id.toString() === userId)) {
+    if (!challenge.enrolled_users.some(id => id.toString() === validUserId.toString())) {
       throw new ForbiddenError('Not enrolled in this challenge');
     }
 
@@ -346,7 +360,7 @@ export class ChallengeService {
       challenge.user_progress = new Map();
     }
     const userProgressMap = challenge.user_progress as Map<string, any>;
-    const currentProgress = userProgressMap.get(userId) || {
+    const currentProgress = userProgressMap.get(validUserId.toString()) || {
       userId: user._id,
       progress: 0,
       questions_completed: 0,
@@ -378,7 +392,7 @@ export class ChallengeService {
       );
     }
 
-    userProgressMap.set(userId, currentProgress);
+    userProgressMap.set(validUserId.toString(), currentProgress);
     challenge.user_progress = userProgressMap;
 
     // Update overall challenge progress
@@ -407,7 +421,8 @@ export class ChallengeService {
   }
 
   async getChallengeLeaderboard(challengeId: string) {
-    const challenge = await Challenges.findById(challengeId)
+    const validId = validateAndConvertObjectId(challengeId, 'challengeId');
+    const challenge = await Challenges.findById(validId)
       .populate('enrolled_users', 'username level xp');
 
     if (!challenge) {
@@ -452,14 +467,16 @@ export class ChallengeService {
   }
 
   async getUserChallengeProgress(userId: string, challengeId: string) {
-    const challenge = await Challenges.findById(challengeId);
+    const validUserId = validateAndConvertObjectId(userId, 'userId');
+    const validChallengeId = validateAndConvertObjectId(challengeId, 'challengeId');
+    const challenge = await Challenges.findById(validChallengeId);
 
     if (!challenge) {
       throw new NotFoundError('Challenge not found');
     }
 
     // Check if enrolled
-    if (!challenge.enrolled_users.some(id => id.toString() === userId)) {
+    if (!challenge.enrolled_users.some(id => id.toString() === validUserId.toString())) {
       throw new ForbiddenError('Not enrolled in this challenge');
     }
 
@@ -474,7 +491,7 @@ export class ChallengeService {
     }
 
     const userProgressMap = challenge.user_progress as Map<string, any>;
-    const progress = userProgressMap.get(userId);
+    const progress = userProgressMap.get(validUserId.toString());
 
     if (!progress) {
       return {
@@ -498,14 +515,16 @@ export class ChallengeService {
   }
 
   async updateChallengeStatus(userId: string, challengeId: string, status: 'active' | 'inactive' | 'completed' | 'pending') {
-    const challenge = await Challenges.findById(challengeId);
+    const validUserId = validateAndConvertObjectId(userId, 'userId');
+    const validChallengeId = validateAndConvertObjectId(challengeId, 'challengeId');
+    const challenge = await Challenges.findById(validChallengeId);
 
     if (!challenge) {
       throw new NotFoundError('Challenge not found');
     }
 
     // Only creator can update status
-    if (challenge.created_by.toString() !== userId) {
+    if (challenge.created_by.toString() !== validUserId.toString()) {
       throw new ForbiddenError('Only challenge creator can update status');
     }
 
@@ -518,14 +537,16 @@ export class ChallengeService {
   }
 
   async deleteChallenge(userId: string, challengeId: string) {
-    const challenge = await Challenges.findById(challengeId);
+    const validUserId = validateAndConvertObjectId(userId, 'userId');
+    const validChallengeId = validateAndConvertObjectId(challengeId, 'challengeId');
+    const challenge = await Challenges.findById(validChallengeId);
 
     if (!challenge) {
       throw new NotFoundError('Challenge not found');
     }
 
     // Only creator can delete
-    if (challenge.created_by.toString() !== userId) {
+    if (challenge.created_by.toString() !== validUserId.toString()) {
       throw new ForbiddenError('Only challenge creator can delete challenge');
     }
 
@@ -535,7 +556,7 @@ export class ChallengeService {
       { $pull: { challenges_id: challenge._id } }
     );
 
-    await Challenges.findByIdAndDelete(challengeId);
+    await Challenges.findByIdAndDelete(validChallengeId);
 
     logger.info(`Challenge ${challenge.challenge_name} deleted by user ${userId}`);
 

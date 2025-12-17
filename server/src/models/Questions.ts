@@ -28,6 +28,12 @@ const questionsSchema = new Schema<IQuestions>(
       enum: ['normal', 'boss'],
       index: true,
     },
+    created_by: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+      index: true,
+    },
   },
   {
     timestamps: true,
@@ -37,6 +43,7 @@ const questionsSchema = new Schema<IQuestions>(
 // Indexes
 questionsSchema.index({ questionType: 1, question_level: 1 });
 questionsSchema.index({ isActive: 1, questionType: 1 });
+questionsSchema.index({ created_by: 1 });
 
 export const Questions = mongoose.model<IQuestions>('Questions', questionsSchema);
 

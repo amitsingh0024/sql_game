@@ -52,16 +52,31 @@ export class AuthService {
 
       logger.info(`New user registered: ${user.username} (${user.email})`);
 
-      return {
+      // Generate tokens for immediate use after registration
+      const payload: JWTPayload = {
         id: user._id.toString(),
         username: user.username,
         email: user.email,
         isAdmin: user.isAdmin,
-        userRole: user.userRole,
-        level: user.level,
-        xp: user.xp,
-        stability: user.stability,
-        createdAt: user.createdAt,
+      };
+
+      const accessToken = this.generateAccessToken(payload);
+      const refreshToken = this.generateRefreshToken(payload);
+
+      return {
+        user: {
+          id: user._id.toString(),
+          username: user.username,
+          email: user.email,
+          isAdmin: user.isAdmin,
+          userRole: user.userRole,
+          level: user.level,
+          xp: user.xp,
+          stability: user.stability,
+          createdAt: user.createdAt,
+        },
+        accessToken,
+        refreshToken,
       };
     } catch (error: any) {
       // Handle MongoDB duplicate key errors
@@ -166,9 +181,11 @@ export class AuthService {
       };
 
       const newAccessToken = this.generateAccessToken(payload);
+      const newRefreshToken = this.generateRefreshToken(payload);
 
       return {
         accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
       };
     } catch (error) {
       throw new UnauthorizedError('Invalid refresh token');

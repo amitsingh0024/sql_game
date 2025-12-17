@@ -37,6 +37,7 @@ export interface IQuestions extends Document {
   isActive: boolean;
   questionType: string; // Should match IGameConfig.gametype
   question_level: string; // normal, boss
+  created_by: Types.ObjectId; // Reference to User who created the question
   createdAt?: Date;
   updatedAt?: Date;
 }

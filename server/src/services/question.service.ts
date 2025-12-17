@@ -1,25 +1,32 @@
 import { Questions } from '../models/Questions.js';
 import { NotFoundError, ForbiddenError, ValidationError } from '../utils/errors.js';
+import { validateAndConvertObjectId, validateObjectIdArray } from '../utils/validation.js';
 import logger from '../utils/logger.js';
 import { Types } from 'mongoose';
 
 export class QuestionService {
-  async createQuestion(questionData: {
-    question: string;
-    answer: string;
-    questionType: 'SQL' | 'JAVA' | 'C++' | 'PYTHON' | 'JAVASCRIPT' | 'AI' | 'ML';
-    question_level: 'normal' | 'boss';
-    isActive?: boolean;
-  }) {
+  async createQuestion(
+    questionData: {
+      question: string;
+      answer: string;
+      questionType: 'SQL' | 'JAVA' | 'C++' | 'PYTHON' | 'JAVASCRIPT' | 'AI' | 'ML';
+      question_level: 'normal' | 'boss';
+      isActive?: boolean;
+    },
+    createdBy: string
+  ) {
+    const validUserId = validateAndConvertObjectId(createdBy, 'createdBy');
+
     const question = await Questions.create({
       question: questionData.question,
       answer: questionData.answer,
       questionType: questionData.questionType,
       question_level: questionData.question_level,
       isActive: questionData.isActive !== undefined ? questionData.isActive : true,
+      created_by: validUserId,
     });
 
-    logger.info(`Question created: ${question._id} (${question.questionType})`);
+    logger.info(`Question created: ${question._id} (${question.questionType}) by user ${createdBy}`);
 
     return {
       id: question._id.toString(),
@@ -28,6 +35,7 @@ export class QuestionService {
       questionType: question.questionType,
       question_level: question.question_level,
       isActive: question.isActive,
+      created_by: question.created_by.toString(),
       createdAt: question.createdAt,
       updatedAt: question.updatedAt,
     };
@@ -65,13 +73,15 @@ export class QuestionService {
       questionType: question.questionType,
       question_level: question.question_level,
       isActive: question.isActive,
+      created_by: question.created_by?.toString(),
       createdAt: question.createdAt,
       updatedAt: question.updatedAt,
     }));
   }
 
   async getQuestionById(questionId: string, includeAnswer: boolean = false) {
-    const question = await Questions.findById(questionId);
+    const validId = validateAndConvertObjectId(questionId, 'questionId');
+    const question = await Questions.findById(validId);
 
     if (!question) {
       throw new NotFoundError('Question not found');
@@ -84,6 +94,7 @@ export class QuestionService {
       questionType: question.questionType,
       question_level: question.question_level,
       isActive: question.isActive,
+      created_by: question.created_by?.toString(),
       createdAt: question.createdAt,
       updatedAt: question.updatedAt,
     };
@@ -121,6 +132,7 @@ export class QuestionService {
       questionType: question.questionType,
       question_level: question.question_level,
       isActive: question.isActive,
+      created_by: question.created_by ? question.created_by.toString() : undefined,
       createdAt: question.createdAt,
       updatedAt: question.updatedAt,
     }));
@@ -141,7 +153,9 @@ export class QuestionService {
     };
 
     if (excludeIds && excludeIds.length > 0) {
-      query._id = { $nin: excludeIds.map(id => new Types.ObjectId(id)) };
+      // Validate all exclude IDs
+      const validExcludeIds = validateObjectIdArray(excludeIds, 'excludeIds');
+      query._id = { $nin: validExcludeIds };
     }
 
     // Get questions sorted by difficulty: normal (easy) first, then boss (hard)
@@ -160,6 +174,7 @@ export class QuestionService {
       questionType: question.questionType,
       question_level: question.question_level,
       isActive: question.isActive,
+      created_by: question.created_by?.toString(),
       createdAt: question.createdAt,
       updatedAt: question.updatedAt,
     }));
@@ -175,7 +190,8 @@ export class QuestionService {
       isActive?: boolean;
     }
   ) {
-    const question = await Questions.findById(questionId);
+    const validId = validateAndConvertObjectId(questionId, 'questionId');
+    const question = await Questions.findById(validId);
 
     if (!question) {
       throw new NotFoundError('Question not found');
@@ -208,13 +224,15 @@ export class QuestionService {
       questionType: question.questionType,
       question_level: question.question_level,
       isActive: question.isActive,
+      created_by: question.created_by?.toString(),
       createdAt: question.createdAt,
       updatedAt: question.updatedAt,
     };
   }
 
   async deleteQuestion(questionId: string) {
-    const question = await Questions.findById(questionId);
+    const validId = validateAndConvertObjectId(questionId, 'questionId');
+    const question = await Questions.findById(validId);
 
     if (!question) {
       throw new NotFoundError('Question not found');
@@ -223,7 +241,7 @@ export class QuestionService {
     // Check if question is used in any active challenges
     const { Challenges } = await import('../models/Challenges.js');
     const challengesUsingQuestion = await Challenges.find({
-      question_ids: question._id,
+      question_ids: validId,
       challenge_status: { $in: ['active', 'pending'] },
     });
 
@@ -233,7 +251,7 @@ export class QuestionService {
       );
     }
 
-    await Questions.findByIdAndDelete(questionId);
+    await Questions.findByIdAndDelete(validId);
 
     logger.info(`Question deleted: ${questionId}`);
 
@@ -244,7 +262,8 @@ export class QuestionService {
     correct: boolean;
     expectedAnswer?: string;
   }> {
-    const question = await Questions.findById(questionId);
+    const validId = validateAndConvertObjectId(questionId, 'questionId');
+    const question = await Questions.findById(validId);
 
     if (!question) {
       throw new NotFoundError('Question not found');

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { questionController } from '../../controllers/question.controller.js';
 import { authenticate, requireAdmin } from '../../middleware/auth.middleware.js';
 import { validate } from '../../middleware/validation.middleware.js';
+import { validateObjectId } from '../../middleware/security.middleware.js';
 import { apiLimiter } from '../../middleware/rateLimit.middleware.js';
 import Joi from 'joi';
 
@@ -41,18 +42,20 @@ router.use(apiLimiter);
 router.get('/', questionController.getQuestions);
 router.get('/random', questionController.getRandomQuestions);
 router.get('/topic/:topic', questionController.getQuestionsByTopic);
-router.get('/:id', questionController.getQuestionById);
+router.get('/:id', validateObjectId('id'), questionController.getQuestionById);
 
 // Protected routes (require authentication)
 router.use(authenticate);
 
 // Answer verification (any authenticated user)
-router.post('/:id/verify', validate(verifyAnswerSchema), questionController.verifyAnswer);
+router.post('/:id/verify', validateObjectId('id'), validate(verifyAnswerSchema), questionController.verifyAnswer);
+
+// Question creation (any authenticated user)
+router.post('/', validate(createQuestionSchema), questionController.createQuestion);
 
 // Admin-only routes
-router.post('/', requireAdmin, validate(createQuestionSchema), questionController.createQuestion);
-router.put('/:id', requireAdmin, validate(updateQuestionSchema), questionController.updateQuestion);
-router.delete('/:id', requireAdmin, questionController.deleteQuestion);
+router.put('/:id', requireAdmin, validateObjectId('id'), validate(updateQuestionSchema), questionController.updateQuestion);
+router.delete('/:id', requireAdmin, validateObjectId('id'), questionController.deleteQuestion);
 router.get('/stats/overview', requireAdmin, questionController.getQuestionStats);
 
 export default router;

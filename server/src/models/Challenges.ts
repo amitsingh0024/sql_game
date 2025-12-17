@@ -51,7 +51,6 @@ const challengesSchema = new Schema<IChallenges>(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      index: true,
     },
     enrolled_users: {
       type: [Schema.Types.ObjectId],
@@ -75,7 +74,6 @@ const challengesSchema = new Schema<IChallenges>(
     },
     room_code: {
       type: String,
-      unique: true,
       sparse: true, // Allows multiple null values
       // Auto-generated for custom_room challenges
     },
@@ -182,7 +180,7 @@ challengesSchema.index({ challenge_start_date: 1, challenge_end_date: 1 });
 challengesSchema.index({ enrolled_users: 1 });
 challengesSchema.index({ created_by: 1 });
 challengesSchema.index({ opponent_id: 1 });
-challengesSchema.index({ room_code: 1 });
+challengesSchema.index({ room_code: 1 }, { unique: true, sparse: true });
 challengesSchema.index({ level_id: 1, mission_index: 1 });
 challengesSchema.index({ question_ids: 1 });
 

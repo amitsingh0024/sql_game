@@ -7,6 +7,7 @@ import { env } from './config/env.js';
 import { API_CONFIG } from './config/api.config.js';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware.js';
 import { apiLimiter } from './middleware/rateLimit.middleware.js';
+import { sanitizeInput } from './middleware/security.middleware.js';
 import logger from './utils/logger.js';
 
 // Routes
@@ -15,16 +16,55 @@ import v1Routes from './routes/v1/index.js';
 
 const app: Express = express();
 
-// Security middleware
-app.use(helmet());
+// Trust proxy - Important for rate limiting and security behind reverse proxy
+app.set('trust proxy', 1);
+
+// Security middleware - Enhanced Helmet configuration
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"],
+    },
+  },
+  crossOriginEmbedderPolicy: false, // Allow embedding if needed
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true,
+  },
+}));
+
+// CORS configuration
 app.use(cors({
   origin: env.CORS_ORIGIN,
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['X-API-Version'],
+  maxAge: 86400, // 24 hours
 }));
 
-// Body parsing middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// Input sanitization middleware (must be before body parsing)
+app.use(sanitizeInput);
+
+// Body parsing middleware - Reduced limit for security
+app.use(express.json({ 
+  limit: '1mb', // Reduced from 10mb for security
+  strict: true, // Only parse arrays and objects
+}));
+app.use(express.urlencoded({ 
+  extended: true, 
+  limit: '1mb', // Reduced from 10mb for security
+  parameterLimit: 50, // Limit number of parameters
+}));
 
 // Compression
 app.use(compression());

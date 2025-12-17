@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { challengeController } from '../../controllers/challenge.controller.js';
 import { authenticate } from '../../middleware/auth.middleware.js';
 import { validate } from '../../middleware/validation.middleware.js';
+import { validateObjectId } from '../../middleware/security.middleware.js';
 import { apiLimiter } from '../../middleware/rateLimit.middleware.js';
 import Joi from 'joi';
 
@@ -25,7 +26,7 @@ const createChallengeSchema = Joi.object({
   is_private: Joi.boolean().default(false),
   question_ids: Joi.array().items(Joi.string()).when('challenge_mode', {
     is: 'custom_room',
-    then: Joi.optional().min(1),
+    then: Joi.array().items(Joi.string()).min(1).optional(),
     otherwise: Joi.optional(),
   }),
   topic: Joi.string()
@@ -104,21 +105,21 @@ router.use(apiLimiter);
 
 // Public routes (no auth required)
 router.get('/', challengeController.getChallenges);
-router.get('/:id', challengeController.getChallengeById);
+router.get('/:id', validateObjectId('id'), challengeController.getChallengeById);
 router.get('/room/:roomCode', challengeController.getChallengeByRoomCode);
-router.get('/:id/leaderboard', challengeController.getChallengeLeaderboard);
+router.get('/:id/leaderboard', validateObjectId('id'), challengeController.getChallengeLeaderboard);
 
 // Protected routes (require authentication)
 router.use(authenticate);
 
 // Challenge management
 router.post('/', validate(createChallengeSchema), challengeController.createChallenge);
-router.post('/:id/enroll', challengeController.enrollInChallenge);
-router.post('/:id/leave', challengeController.leaveChallenge);
-router.put('/:id/progress', validate(updateProgressSchema), challengeController.updateChallengeProgress);
-router.get('/:id/progress', challengeController.getUserChallengeProgress);
-router.put('/:id/status', validate(updateStatusSchema), challengeController.updateChallengeStatus);
-router.delete('/:id', challengeController.deleteChallenge);
+router.post('/:id/enroll', validateObjectId('id'), challengeController.enrollInChallenge);
+router.post('/:id/leave', validateObjectId('id'), challengeController.leaveChallenge);
+router.put('/:id/progress', validateObjectId('id'), validate(updateProgressSchema), challengeController.updateChallengeProgress);
+router.get('/:id/progress', validateObjectId('id'), challengeController.getUserChallengeProgress);
+router.put('/:id/status', validateObjectId('id'), validate(updateStatusSchema), challengeController.updateChallengeStatus);
+router.delete('/:id', validateObjectId('id'), challengeController.deleteChallenge);
 
 export default router;
 

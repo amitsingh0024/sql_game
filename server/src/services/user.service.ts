@@ -3,11 +3,13 @@ import { User } from '../models/User.js';
 import { Challenges } from '../models/Challenges.js';
 import { FriendRequest } from '../models/FriendRequest.js';
 import { UnauthorizedError, NotFoundError, ConflictError, ForbiddenError } from '../utils/errors.js';
+import { validateAndConvertObjectId } from '../utils/validation.js';
 import logger from '../utils/logger.js';
 
 export class UserService {
   async getUserProfile(userId: string) {
-    const user = await User.findById(userId);
+    const validId = validateAndConvertObjectId(userId, 'userId');
+    const user = await User.findById(validId);
 
     if (!user) {
       throw new NotFoundError('User not found');
@@ -30,7 +32,8 @@ export class UserService {
   }
 
   async getPublicUserProfile(userId: string) {
-    const user = await User.findById(userId).select('-password -email -isAdmin -userRole -isActive');
+    const validId = validateAndConvertObjectId(userId, 'userId');
+    const user = await User.findById(validId).select('-password -email -isAdmin -userRole -isActive');
 
     if (!user) {
       throw new NotFoundError('User not found');
@@ -47,7 +50,8 @@ export class UserService {
   }
 
   async updateProfile(userId: string, updates: { username?: string; email?: string }) {
-    const user = await User.findById(userId);
+    const validId = validateAndConvertObjectId(userId, 'userId');
+    const user = await User.findById(validId);
 
     if (!user) {
       throw new NotFoundError('User not found');
@@ -89,7 +93,8 @@ export class UserService {
   }
 
   async changePassword(userId: string, currentPassword: string, newPassword: string) {
-    const user = await User.findById(userId).select('+password');
+    const validId = validateAndConvertObjectId(userId, 'userId');
+    const user = await User.findById(validId).select('+password');
 
     if (!user) {
       throw new NotFoundError('User not found');
@@ -115,7 +120,8 @@ export class UserService {
   }
 
   async getUserChallenges(userId: string) {
-    const user = await User.findById(userId);
+    const validId = validateAndConvertObjectId(userId, 'userId');
+    const user = await User.findById(validId);
 
     if (!user) {
       throw new NotFoundError('User not found');
@@ -150,7 +156,8 @@ export class UserService {
   }
 
   async getFriends(userId: string) {
-    const user = await User.findById(userId).populate('associated_friend_id', 'username level xp stability');
+    const validId = validateAndConvertObjectId(userId, 'userId');
+    const user = await User.findById(validId).populate('associated_friend_id', 'username level xp stability');
 
     if (!user) {
       throw new NotFoundError('User not found');
@@ -170,12 +177,15 @@ export class UserService {
   }
 
   async sendFriendRequest(userId: string, toUserId: string) {
-    if (userId === toUserId) {
+    const validUserId = validateAndConvertObjectId(userId, 'userId');
+    const validToUserId = validateAndConvertObjectId(toUserId, 'toUserId');
+    
+    if (validUserId.toString() === validToUserId.toString()) {
       throw new ConflictError('Cannot send friend request to yourself');
     }
 
-    const user = await User.findById(userId);
-    const toUser = await User.findById(toUserId);
+    const user = await User.findById(validUserId);
+    const toUser = await User.findById(validToUserId);
 
     if (!user) {
       throw new NotFoundError('User not found');
@@ -186,21 +196,21 @@ export class UserService {
     }
 
     // Check if already friends
-    if (user.associated_friend_id && user.associated_friend_id.some((id) => id.toString() === toUserId)) {
+    if (user.associated_friend_id && user.associated_friend_id.some((id) => id.toString() === validToUserId.toString())) {
       throw new ConflictError('User is already in your friends list');
     }
 
     // Check if there's already a pending request (in either direction)
     const existingRequest = await FriendRequest.findOne({
       $or: [
-        { fromUserId: userId, toUserId: toUserId },
-        { fromUserId: toUserId, toUserId: userId },
+        { fromUserId: validUserId, toUserId: validToUserId },
+        { fromUserId: validToUserId, toUserId: validUserId },
       ],
       status: 'pending',
     });
 
     if (existingRequest) {
-      if (existingRequest.fromUserId.toString() === userId) {
+      if (existingRequest.fromUserId.toString() === validUserId.toString()) {
         throw new ConflictError('Friend request already sent');
       } else {
         throw new ConflictError('This user has already sent you a friend request');
@@ -210,8 +220,8 @@ export class UserService {
     // Check if there's an accepted request (already friends)
     const acceptedRequest = await FriendRequest.findOne({
       $or: [
-        { fromUserId: userId, toUserId: toUserId },
-        { fromUserId: toUserId, toUserId: userId },
+        { fromUserId: validUserId, toUserId: validToUserId },
+        { fromUserId: validToUserId, toUserId: validUserId },
       ],
       status: 'accepted',
     });
@@ -222,8 +232,8 @@ export class UserService {
 
     // Create friend request
     const friendRequest = await FriendRequest.create({
-      fromUserId: user._id,
-      toUserId: toUser._id,
+      fromUserId: validUserId,
+      toUserId: validToUserId,
       status: 'pending',
     });
 
@@ -245,7 +255,8 @@ export class UserService {
   }
 
   async getFriendRequests(userId: string, type: 'sent' | 'received' = 'received') {
-    const user = await User.findById(userId);
+    const validId = validateAndConvertObjectId(userId, 'userId');
+    const user = await User.findById(validId);
 
     if (!user) {
       throw new NotFoundError('User not found');
@@ -253,8 +264,8 @@ export class UserService {
 
     const query =
       type === 'sent'
-        ? { fromUserId: user._id, status: 'pending' }
-        : { toUserId: user._id, status: 'pending' };
+        ? { fromUserId: validId, status: 'pending' }
+        : { toUserId: validId, status: 'pending' };
 
     const requests = await FriendRequest.find(query)
       .populate('fromUserId', 'username level xp')
@@ -281,8 +292,10 @@ export class UserService {
   }
 
   async acceptFriendRequest(userId: string, requestId: string) {
-    const user = await User.findById(userId);
-    const friendRequest = await FriendRequest.findById(requestId)
+    const validUserId = validateAndConvertObjectId(userId, 'userId');
+    const validRequestId = validateAndConvertObjectId(requestId, 'requestId');
+    const user = await User.findById(validUserId);
+    const friendRequest = await FriendRequest.findById(validRequestId)
       .populate('fromUserId')
       .populate('toUserId');
 
@@ -295,7 +308,7 @@ export class UserService {
     }
 
     // Verify the request is for this user
-    if (friendRequest.toUserId.toString() !== userId) {
+    if (friendRequest.toUserId.toString() !== validUserId.toString()) {
       throw new ForbiddenError('You can only accept friend requests sent to you');
     }
 
@@ -328,7 +341,7 @@ export class UserService {
       if (!fromUserDoc.associated_friend_id) {
         fromUserDoc.associated_friend_id = [];
       }
-      fromUserDoc.associated_friend_id.push(user._id);
+      fromUserDoc.associated_friend_id.push(validUserId);
       await fromUserDoc.save();
     }
 
@@ -353,8 +366,10 @@ export class UserService {
   }
 
   async rejectFriendRequest(userId: string, requestId: string) {
-    const user = await User.findById(userId);
-    const friendRequest = await FriendRequest.findById(requestId)
+    const validUserId = validateAndConvertObjectId(userId, 'userId');
+    const validRequestId = validateAndConvertObjectId(requestId, 'requestId');
+    const user = await User.findById(validUserId);
+    const friendRequest = await FriendRequest.findById(validRequestId)
       .populate('fromUserId');
 
     if (!user) {
@@ -366,7 +381,7 @@ export class UserService {
     }
 
     // Verify the request is for this user
-    if (friendRequest.toUserId.toString() !== userId) {
+    if (friendRequest.toUserId.toString() !== validUserId.toString()) {
       throw new ForbiddenError('You can only reject friend requests sent to you');
     }
 
@@ -390,8 +405,10 @@ export class UserService {
   }
 
   async cancelFriendRequest(userId: string, requestId: string) {
-    const user = await User.findById(userId);
-    const friendRequest = await FriendRequest.findById(requestId)
+    const validUserId = validateAndConvertObjectId(userId, 'userId');
+    const validRequestId = validateAndConvertObjectId(requestId, 'requestId');
+    const user = await User.findById(validUserId);
+    const friendRequest = await FriendRequest.findById(validRequestId)
       .populate('fromUserId')
       .populate('toUserId');
 
@@ -404,7 +421,7 @@ export class UserService {
     }
 
     // Verify the request was sent by this user
-    if (friendRequest.fromUserId.toString() !== userId) {
+    if (friendRequest.fromUserId.toString() !== validUserId.toString()) {
       throw new ForbiddenError('You can only cancel friend requests you sent');
     }
 
@@ -414,7 +431,7 @@ export class UserService {
     }
 
     // Delete the request
-    await FriendRequest.findByIdAndDelete(requestId);
+    await FriendRequest.findByIdAndDelete(validRequestId);
 
     logger.info(`Friend request cancelled: ${user.username} cancelled request ${requestId}`);
 
@@ -424,8 +441,10 @@ export class UserService {
   }
 
   async removeFriend(userId: string, friendId: string) {
-    const user = await User.findById(userId);
-    const friend = await User.findById(friendId);
+    const validUserId = validateAndConvertObjectId(userId, 'userId');
+    const validFriendId = validateAndConvertObjectId(friendId, 'friendId');
+    const user = await User.findById(validUserId);
+    const friend = await User.findById(validFriendId);
 
     if (!user) {
       throw new NotFoundError('User not found');
@@ -441,7 +460,7 @@ export class UserService {
     }
 
     const friendIndex = user.associated_friend_id.findIndex(
-      (id) => id.toString() === friendId
+      (id) => id.toString() === validFriendId.toString()
     );
 
     if (friendIndex === -1) {
@@ -455,7 +474,7 @@ export class UserService {
     // Remove user from friend's list
     if (friend.associated_friend_id) {
       const userIndex = friend.associated_friend_id.findIndex(
-        (id) => id.toString() === userId
+        (id) => id.toString() === validUserId.toString()
       );
       if (userIndex !== -1) {
         friend.associated_friend_id.splice(userIndex, 1);
@@ -467,8 +486,8 @@ export class UserService {
     await FriendRequest.updateMany(
       {
         $or: [
-          { fromUserId: userId, toUserId: friendId },
-          { fromUserId: friendId, toUserId: userId },
+          { fromUserId: validUserId, toUserId: validFriendId },
+          { fromUserId: validFriendId, toUserId: validUserId },
         ],
       },
       { status: 'rejected' }

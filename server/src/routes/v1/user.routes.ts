@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { userController } from '../../controllers/user.controller.js';
 import { authenticate } from '../../middleware/auth.middleware.js';
 import { validate } from '../../middleware/validation.middleware.js';
+import { validateObjectId } from '../../middleware/security.middleware.js';
 import { apiLimiter } from '../../middleware/rateLimit.middleware.js';
 import Joi from 'joi';
 
@@ -39,17 +40,17 @@ router.get('/challenges/list', userController.getUserChallenges);
 
 // Friends routes
 router.get('/friends/list', userController.getFriends);
-router.delete('/friends/:id', userController.removeFriend);
+router.delete('/friends/:id', validateObjectId('id'), userController.removeFriend);
 
 // Friend Request routes
-router.post('/friends/request/:id', userController.sendFriendRequest);
+router.post('/friends/request/:id', validateObjectId('id'), userController.sendFriendRequest);
 router.get('/friends/requests', userController.getFriendRequests);
-router.post('/friends/requests/:id/accept', userController.acceptFriendRequest);
-router.post('/friends/requests/:id/reject', userController.rejectFriendRequest);
-router.delete('/friends/requests/:id', userController.cancelFriendRequest);
+router.post('/friends/requests/:id/accept', validateObjectId('id'), userController.acceptFriendRequest);
+router.post('/friends/requests/:id/reject', validateObjectId('id'), userController.rejectFriendRequest);
+router.delete('/friends/requests/:id', validateObjectId('id'), userController.cancelFriendRequest);
 
 // Public profile route (must be last to avoid conflicts with other routes)
-router.get('/:id', userController.getPublicProfile);
+router.get('/:id', validateObjectId('id'), userController.getPublicProfile);
 
 export default router;
 

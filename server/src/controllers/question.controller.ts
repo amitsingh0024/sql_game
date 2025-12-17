@@ -12,15 +12,9 @@ export const questionController = {
         });
       }
 
-      // Only admins can create questions
-      if (!req.user.isAdmin) {
-        return res.status(403).json({
-          success: false,
-          error: { message: 'Admin access required', statusCode: 403 },
-        });
-      }
-
-      const question = await questionService.createQuestion(req.body);
+      // Any authenticated user can create questions
+      // The creator's ID will be automatically saved
+      const question = await questionService.createQuestion(req.body, req.user.id);
 
       res.status(201).json({
         success: true,

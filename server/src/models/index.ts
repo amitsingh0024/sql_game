@@ -24,3 +24,6 @@ export { challengeUserProgressSchema } from './ChallengeUserProgress.js';
 export { Leaderboard } from './Leaderboard.js';
 export { AnalyticsEvent } from './AnalyticsEvent.js';
 
+// Friend Requests
+export { FriendRequest } from './FriendRequest.js';
+

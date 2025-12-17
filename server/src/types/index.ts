@@ -168,6 +168,15 @@ export interface IUserAchievement extends Document {
   updatedAt?: Date;
 }
 
+export interface IFriendRequest extends Document {
+  _id: Types.ObjectId;
+  fromUserId: Types.ObjectId; // User who sent the request
+  toUserId: Types.ObjectId; // User who received the request
+  status: 'pending' | 'accepted' | 'rejected';
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
 export interface AuthRequest extends Request {
   user?: {
     id: string;

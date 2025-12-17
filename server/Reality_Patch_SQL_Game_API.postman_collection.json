@@ -1,0 +1,2495 @@
+{
+	"info": {
+		"_postman_id": "reality-patch-sql-game-api",
+		"name": "Reality Patch: SQL Game API",
+		"description": "Complete automated API collection with built-in scripts for easy testing. All variables and authentication are handled automatically.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "reality-patch"
+	},
+	"item": [
+		{
+			"name": "Health & Info",
+			"item": [
+				{
+					"name": "Health Check",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has success field\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/health",
+							"host": ["{{base_url}}"],
+							"path": ["api", "health"]
+						},
+						"description": "Check server health and database connection status"
+					},
+					"response": []
+				},
+				{
+					"name": "Server Info",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response contains API info\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('name');",
+									"    pm.expect(jsonData.data).to.have.property('version');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/info",
+							"host": ["{{base_url}}"],
+							"path": ["api", "info"]
+						},
+						"description": "Get server information and API version"
+					},
+					"response": []
+				}
+			],
+			"description": "System health and information endpoints"
+		},
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Auto-save tokens after successful registration",
+									"if (pm.response.code === 201) {",
+									"    try {",
+									"        const response = pm.response.json();",
+									"        if (response.success && response.data) {",
+									"            // Save tokens if available",
+									"            if (response.data.accessToken) {",
+									"                pm.collectionVariables.set('access_token', response.data.accessToken);",
+									"                console.log('✅ Access token saved');",
+									"            }",
+									"            if (response.data.refreshToken) {",
+									"                pm.collectionVariables.set('refresh_token', response.data.refreshToken);",
+									"                console.log('✅ Refresh token saved');",
+									"            }",
+									"            // Save user ID",
+									"            if (response.data.user) {",
+									"                const userId = response.data.user.id || response.data.user._id;",
+									"                if (userId) {",
+									"                    pm.collectionVariables.set('user_id', userId);",
+									"                    console.log('✅ User ID saved:', userId);",
+									"                }",
+									"            }",
+									"            if (response.data.accessToken && response.data.refreshToken) {",
+									"                console.log('✅ All tokens saved automatically - ready for API calls!');",
+									"            }",
+									"        }",
+									"    } catch (error) {",
+									"        console.log('⚠️  Error saving tokens:', error.message);",
+									"    }",
+									"}",
+									"",
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Response contains tokens\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data).to.have.property('accessToken');",
+									"    pm.expect(jsonData.data).to.have.property('refreshToken');",
+									"    pm.expect(jsonData.data).to.have.property('user');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"testuser\",\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/register",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "register"]
+						},
+						"description": "Register a new user account. Tokens are automatically saved."
+					},
+					"response": []
+				},
+				{
+					"name": "Admin Register",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Auto-save tokens after successful admin registration",
+									"if (pm.response.code === 201) {",
+									"    try {",
+									"        const response = pm.response.json();",
+									"        if (response.success && response.data) {",
+									"            // Save tokens if available",
+									"            if (response.data.accessToken) {",
+									"                pm.collectionVariables.set('access_token', response.data.accessToken);",
+									"                pm.collectionVariables.set('admin_access_token', response.data.accessToken);",
+									"                console.log('✅ Admin access token saved');",
+									"            }",
+									"            if (response.data.refreshToken) {",
+									"                pm.collectionVariables.set('refresh_token', response.data.refreshToken);",
+									"                pm.collectionVariables.set('admin_refresh_token', response.data.refreshToken);",
+									"                console.log('✅ Admin refresh token saved');",
+									"            }",
+									"            // Save user ID",
+									"            if (response.data.user) {",
+									"                const userId = response.data.user.id || response.data.user._id;",
+									"                if (userId) {",
+									"                    pm.collectionVariables.set('user_id', userId);",
+									"                    pm.collectionVariables.set('admin_user_id', userId);",
+									"                    console.log('✅ Admin User ID saved:', userId);",
+									"                }",
+									"                // Check if user is admin",
+									"                if (response.data.user.isAdmin === true || response.data.user.userRole === 'ADMIN' || response.data.user.userRole === 'SUPER_ADMIN') {",
+									"                    console.log('✅ Admin user registered successfully');",
+									"                } else {",
+									"                    console.log('⚠️  Note: User registered but isAdmin/userRole may need to be set manually in database');",
+									"                }",
+									"            }",
+									"            if (response.data.accessToken && response.data.refreshToken) {",
+									"                console.log('✅ All admin tokens saved automatically - ready for API calls!');",
+									"            }",
+									"        }",
+									"    } catch (error) {",
+									"        console.log('⚠️  Error saving tokens:', error.message);",
+									"    }",
+									"}",
+									"",
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Response contains tokens\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data).to.have.property('accessToken');",
+									"    pm.expect(jsonData.data).to.have.property('refreshToken');",
+									"    pm.expect(jsonData.data).to.have.property('user');",
+									"});",
+									"",
+									"pm.test(\"User is created\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data.user).to.have.property('username');",
+									"    pm.expect(jsonData.data.user).to.have.property('email');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"admin\",\n  \"email\": \"admin@example.com\",\n  \"password\": \"admin123456\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/register",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "register"]
+						},
+						"description": "Register a new admin user account. Note: The register endpoint doesn't accept isAdmin/userRole fields directly. After registration, you may need to manually set isAdmin=true or userRole='ADMIN' in the database, or use a separate admin creation endpoint if available. Tokens are automatically saved."
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Auto-save tokens after successful login",
+									"if (pm.response.code === 200) {",
+									"    try {",
+									"        const response = pm.response.json();",
+									"        if (response.success && response.data) {",
+									"            // Save tokens if available",
+									"            if (response.data.accessToken) {",
+									"                pm.collectionVariables.set('access_token', response.data.accessToken);",
+									"                console.log('✅ Access token saved');",
+									"            }",
+									"            if (response.data.refreshToken) {",
+									"                pm.collectionVariables.set('refresh_token', response.data.refreshToken);",
+									"                console.log('✅ Refresh token saved');",
+									"            }",
+									"            // Save user ID",
+									"            if (response.data.user) {",
+									"                const userId = response.data.user.id || response.data.user._id;",
+									"                if (userId) {",
+									"                    pm.collectionVariables.set('user_id', userId);",
+									"                    console.log('✅ User ID saved:', userId);",
+									"                }",
+									"            }",
+									"            if (response.data.accessToken && response.data.refreshToken) {",
+									"                console.log('✅ All tokens saved automatically - ready for API calls!');",
+									"            }",
+									"        }",
+									"    } catch (error) {",
+									"        console.log('⚠️  Error saving tokens:', error.message);",
+									"    }",
+									"}",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response contains tokens\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data).to.have.property('accessToken');",
+									"    pm.expect(jsonData.data).to.have.property('refreshToken');",
+									"    pm.expect(jsonData.data).to.have.property('user');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "login"]
+						},
+						"description": "Login with email and password. Tokens are automatically saved."
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Auto-save tokens after successful refresh",
+									"if (pm.response.code === 200) {",
+									"    try {",
+									"        const response = pm.response.json();",
+									"        if (response.success && response.data) {",
+									"            // Save new access token",
+									"            if (response.data.accessToken) {",
+									"                pm.collectionVariables.set('access_token', response.data.accessToken);",
+									"                console.log('✅ Access token refreshed and saved');",
+									"            }",
+									"            // Save new refresh token if provided",
+									"            if (response.data.refreshToken) {",
+									"                pm.collectionVariables.set('refresh_token', response.data.refreshToken);",
+									"                console.log('✅ Refresh token updated and saved');",
+									"            }",
+									"            if (response.data.accessToken) {",
+									"                console.log('✅ Tokens refreshed automatically - ready for API calls!');",
+									"            }",
+									"        }",
+									"    } catch (error) {",
+									"        console.log('⚠️  Error saving refreshed tokens:', error.message);",
+									"    }",
+									"}",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response contains new access token\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data).to.have.property('accessToken');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refreshToken\": \"{{refresh_token}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/refresh",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "refresh"]
+						},
+						"description": "Refresh access token using refresh token. New tokens are automatically saved."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Current User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response contains user data\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('user');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/me",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "me"]
+						},
+						"description": "Get current authenticated user information"
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication endpoints with automatic token management"
+		},
+		{
+			"name": "User Management",
+			"item": [
+				{
+					"name": "Search Users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/user/search?query=test",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "user", "search"],
+							"query": [
+								{
+									"key": "query",
+									"value": "test"
+								}
+							]
+						},
+						"description": "Search for users (public endpoint)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Profile",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/user/profile",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "user", "profile"]
+						},
+						"description": "Get current user's profile"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Profile",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"newusername\",\n  \"email\": \"newemail@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/user/profile",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "user", "profile"]
+						},
+						"description": "Update user profile"
+					},
+					"response": []
+				},
+				{
+					"name": "Change Password",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"currentPassword\": \"password123\",\n  \"newPassword\": \"newpassword123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/user/password",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "user", "password"]
+						},
+						"description": "Change user password"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Public Profile",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/user/{{user_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "user", "{{user_id}}"]
+						},
+						"description": "Get public profile by user ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Challenges",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/user/challenges/list",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "user", "challenges", "list"]
+						},
+						"description": "Get all challenges for current user"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Friends",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/user/friends/list",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "user", "friends", "list"]
+						},
+						"description": "Get user's friends list"
+					},
+					"response": []
+				},
+				{
+					"name": "Send Friend Request",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200 || pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.requestId) {",
+									"        pm.collectionVariables.set('request_id', response.data.requestId);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/user/friends/request/{{friend_user_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "user", "friends", "request", "{{friend_user_id}}"]
+						},
+						"description": "Send friend request to a user"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Friend Requests",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/user/friends/requests",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "user", "friends", "requests"]
+						},
+						"description": "Get pending friend requests"
+					},
+					"response": []
+				},
+				{
+					"name": "Accept Friend Request",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/user/friends/requests/{{request_id}}/accept",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "user", "friends", "requests", "{{request_id}}", "accept"]
+						},
+						"description": "Accept a friend request"
+					},
+					"response": []
+				},
+				{
+					"name": "Reject Friend Request",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/user/friends/requests/{{request_id}}/reject",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "user", "friends", "requests", "{{request_id}}", "reject"]
+						},
+						"description": "Reject a friend request"
+					},
+					"response": []
+				},
+				{
+					"name": "Cancel Friend Request",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/user/friends/requests/{{request_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "user", "friends", "requests", "{{request_id}}"]
+						},
+						"description": "Cancel a sent friend request"
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Friend",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/user/friends/{{friend_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "user", "friends", "{{friend_id}}"]
+						},
+						"description": "Remove a friend"
+					},
+					"response": []
+				}
+			],
+			"description": "User management endpoints"
+		},
+		{
+			"name": "Challenges",
+			"item": [
+				{
+					"name": "Get Challenges",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has success field\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/challenges?page=1&limit=10&status=active",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "challenges"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number"
+								},
+								{
+									"key": "limit",
+									"value": "10",
+									"description": "Items per page"
+								},
+								{
+									"key": "status",
+									"value": "active",
+									"description": "Filter by status (active, completed, pending)",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get all challenges (public). Supports pagination and filtering."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Challenge by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has success field\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/challenges/{{challenge_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "challenges", "{{challenge_id}}"]
+						},
+						"description": "Get challenge details by ID (public). Uses challenge_id from collection variables."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Challenge by Room Code",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has success field\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/challenges/room/{{room_code}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "challenges", "room", "{{room_code}}"]
+						},
+						"description": "Get challenge by room code (public). Uses room_code from collection variables."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Challenge Leaderboard",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has success field\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/challenges/{{challenge_id}}/leaderboard",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "challenges", "{{challenge_id}}", "leaderboard"]
+						},
+						"description": "Get challenge leaderboard (public). Uses challenge_id from collection variables."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Challenge - One on One",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data._id) {",
+									"        pm.collectionVariables.set('challenge_id', response.data._id);",
+									"        console.log('✅ Challenge ID saved:', response.data._id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"challenge_mode\": \"one_on_one\",\n  \"challenge_type\": \"custom_created\",\n  \"challenge_name\": \"1v1 SQL Battle\",\n  \"challenge_description\": \"Test your SQL skills against a friend\",\n  \"gametype\": \"SQL\",\n  \"challenge_start_date\": \"2024-12-17T00:00:00Z\",\n  \"challenge_end_date\": \"2024-12-18T00:00:00Z\",\n  \"opponent_id\": \"{{friend_user_id}}\",\n  \"allow_hints\": true,\n  \"time_limit_seconds\": 3600,\n  \"difficulty\": \"medium\",\n  \"challenge_reward\": 100\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/challenges",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "challenges"]
+						},
+						"description": "Create a one-on-one challenge"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Challenge - Story Mode",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data._id) {",
+									"        pm.collectionVariables.set('challenge_id', response.data._id);",
+									"        console.log('✅ Challenge ID saved:', response.data._id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"challenge_mode\": \"story_mode\",\n  \"challenge_type\": \"custom_created\",\n  \"challenge_name\": \"Story Mode Challenge\",\n  \"challenge_description\": \"Complete story mode challenges\",\n  \"gametype\": \"SQL\",\n  \"challenge_start_date\": \"2024-12-17T00:00:00Z\",\n  \"challenge_end_date\": \"2024-12-18T00:00:00Z\",\n  \"level_id\": 1,\n  \"mission_index\": 0,\n  \"allow_hints\": true,\n  \"time_limit_seconds\": 7200,\n  \"difficulty\": \"hard\",\n  \"challenge_reward\": 200\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/challenges",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "challenges"]
+						},
+						"description": "Create a story mode challenge"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Challenge - Custom Room (with questions)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data._id) {",
+									"        pm.collectionVariables.set('challenge_id', response.data._id);",
+									"        if (response.data.room_code) {",
+									"            pm.collectionVariables.set('room_code', response.data.room_code);",
+									"        }",
+									"        console.log('✅ Challenge ID saved:', response.data._id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"challenge_mode\": \"custom_room\",\n  \"challenge_type\": \"custom_created\",\n  \"challenge_name\": \"Custom Room Challenge\",\n  \"challenge_description\": \"Join this custom room\",\n  \"gametype\": \"SQL\",\n  \"challenge_start_date\": \"2024-12-17T00:00:00Z\",\n  \"challenge_end_date\": \"2024-12-18T00:00:00Z\",\n  \"max_participants\": 10,\n  \"is_private\": false,\n  \"question_ids\": [\"{{question_id}}\"],\n  \"allow_hints\": true,\n  \"time_limit_seconds\": 3600,\n  \"difficulty\": \"easy\",\n  \"challenge_reward\": 50\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/challenges",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "challenges"]
+						},
+						"description": "Create custom room challenge with specific questions"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Challenge - Custom Room (auto-select)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data._id) {",
+									"        pm.collectionVariables.set('challenge_id', response.data._id);",
+									"        if (response.data.room_code) {",
+									"            pm.collectionVariables.set('room_code', response.data.room_code);",
+									"        }",
+									"        console.log('✅ Challenge ID saved:', response.data._id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"challenge_mode\": \"custom_room\",\n  \"challenge_type\": \"custom_created\",\n  \"challenge_name\": \"Auto-Select Challenge\",\n  \"challenge_description\": \"Questions auto-selected by topic\",\n  \"gametype\": \"SQL\",\n  \"challenge_start_date\": \"2024-12-17T00:00:00Z\",\n  \"challenge_end_date\": \"2024-12-18T00:00:00Z\",\n  \"max_participants\": 20,\n  \"is_private\": false,\n  \"topic\": \"SQL\",\n  \"number_of_questions\": 5,\n  \"allow_hints\": true,\n  \"time_limit_seconds\": 3600,\n  \"difficulty\": \"medium\",\n  \"challenge_reward\": 75\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/challenges",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "challenges"]
+						},
+						"description": "Create custom room challenge with auto-selected questions"
+					},
+					"response": []
+				},
+				{
+					"name": "Enroll in Challenge",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/challenges/{{challenge_id}}/enroll",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "challenges", "{{challenge_id}}", "enroll"]
+						},
+						"description": "Enroll in a challenge"
+					},
+					"response": []
+				},
+				{
+					"name": "Leave Challenge",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/challenges/{{challenge_id}}/leave",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "challenges", "{{challenge_id}}", "leave"]
+						},
+						"description": "Leave a challenge"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Challenge Progress",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"questions_completed\": 3,\n  \"score\": 85,\n  \"time_spent_seconds\": 1200,\n  \"completed\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/challenges/{{challenge_id}}/progress",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "challenges", "{{challenge_id}}", "progress"]
+						},
+						"description": "Update challenge progress"
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Challenge Progress",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/challenges/{{challenge_id}}/progress",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "challenges", "{{challenge_id}}", "progress"]
+						},
+						"description": "Get user's progress in a challenge"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Challenge Status",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"active\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/challenges/{{challenge_id}}/status",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "challenges", "{{challenge_id}}", "status"]
+						},
+						"description": "Update challenge status"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Challenge",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/challenges/{{challenge_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "challenges", "{{challenge_id}}"]
+						},
+						"description": "Delete a challenge"
+					},
+					"response": []
+				}
+			],
+			"description": "Challenge management endpoints"
+		},
+		{
+			"name": "Questions",
+			"item": [
+				{
+					"name": "Get Questions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has success field\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/questions?page=1&limit=20&topic=SQL",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "questions"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number"
+								},
+								{
+									"key": "limit",
+									"value": "20",
+									"description": "Items per page"
+								},
+								{
+									"key": "topic",
+									"value": "SQL",
+									"description": "Filter by topic (SQL, JAVA, C++, PYTHON, JAVASCRIPT, AI, ML)",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get all questions (public). Supports pagination and filtering by topic."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Random Questions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.length > 0 && response.data[0]._id) {",
+									"        pm.collectionVariables.set('question_id', response.data[0]._id);",
+									"        console.log('✅ Question ID saved:', response.data[0]._id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/questions/random?count=5&topic=SQL",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "questions", "random"],
+							"query": [
+								{
+									"key": "count",
+									"value": "5"
+								},
+								{
+									"key": "topic",
+									"value": "SQL"
+								}
+							]
+						},
+						"description": "Get random questions (public). First question ID is auto-saved."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Questions by Topic",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/questions/topic/SQL",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "questions", "topic", "SQL"]
+						},
+						"description": "Get questions by topic (public)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Question by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/questions/{{question_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "questions", "{{question_id}}"]
+						},
+						"description": "Get question by ID (public)"
+					},
+					"response": []
+				},
+				{
+					"name": "Verify Answer",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"answer\": \"SELECT * FROM users;\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/questions/{{question_id}}/verify",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "questions", "{{question_id}}", "verify"]
+						},
+						"description": "Verify answer for a question (authenticated)"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Question",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.question) {",
+									"        const questionId = response.data.question.id || response.data.question._id;",
+									"        if (questionId) {",
+									"            pm.collectionVariables.set('question_id', questionId);",
+									"            console.log('✅ Question ID saved:', questionId);",
+									"        }",
+									"        // Log creator info",
+									"        if (response.data.question.created_by) {",
+									"            console.log('✅ Question created by user:', response.data.question.created_by);",
+									"        }",
+									"    }",
+									"}",
+									"",
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Response contains question with creator\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data.question).to.have.property('id');",
+									"    pm.expect(jsonData.data.question).to.have.property('created_by');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"question\": \"Write a SQL query to select all users\",\n  \"answer\": \"SELECT * FROM users;\",\n  \"questionType\": \"SQL\",\n  \"question_level\": \"normal\",\n  \"isActive\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/questions",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "questions"]
+						},
+						"description": "Create a new question (any authenticated user). The creator's ID is automatically saved. Question ID is auto-saved."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Question (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"question\": \"Updated question text\",\n  \"answer\": \"Updated answer\",\n  \"isActive\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/questions/{{question_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "questions", "{{question_id}}"]
+						},
+						"description": "Update a question (admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Question (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/questions/{{question_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "questions", "{{question_id}}"]
+						},
+						"description": "Delete a question (admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Question Stats (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/questions/stats/overview",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "questions", "stats", "overview"]
+						},
+						"description": "Get question statistics (admin only)"
+					},
+					"response": []
+				}
+			],
+			"description": "Question management endpoints"
+		},
+		{
+			"name": "Code Execution",
+			"item": [
+				{
+					"name": "Get Supported Languages",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/execute/languages",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "execute", "languages"]
+						},
+						"description": "Get list of supported programming languages (public)"
+					},
+					"response": []
+				},
+				{
+					"name": "Execute Code - SQL",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"code\": \"SELECT * FROM users WHERE id = 1;\",\n  \"language\": \"SQL\",\n  \"questionId\": \"{{question_id}}\",\n  \"timeout\": 5000\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/execute",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "execute"]
+						},
+						"description": "Execute SQL code"
+					},
+					"response": []
+				},
+				{
+					"name": "Execute Code - JavaScript",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"code\": \"function add(a, b) { return a + b; }\\nconsole.log(add(5, 3));\",\n  \"language\": \"JAVASCRIPT\",\n  \"timeout\": 5000\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/execute",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "execute"]
+						},
+						"description": "Execute JavaScript code"
+					},
+					"response": []
+				},
+				{
+					"name": "Execute Code - C++",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"code\": \"#include <iostream>\\nint main() { std::cout << \\\"Hello World\\\" << std::endl; return 0; }\",\n  \"language\": \"C++\",\n  \"timeout\": 10000\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/execute",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "execute"]
+						},
+						"description": "Execute C++ code"
+					},
+					"response": []
+				},
+				{
+					"name": "Validate Code",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"code\": \"SELECT * FROM users;\",\n  \"language\": \"SQL\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/execute/validate",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "execute", "validate"]
+						},
+						"description": "Validate code for security and syntax"
+					},
+					"response": []
+				}
+			],
+			"description": "Code execution endpoints"
+		},
+		{
+			"name": "Settings",
+			"item": [
+				{
+					"name": "Get Settings",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/settings",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "settings"]
+						},
+						"description": "Get user settings"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Settings",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"theme\": \"dark\",\n  \"soundEnabled\": true,\n  \"musicEnabled\": false,\n  \"soundVolume\": 75,\n  \"musicVolume\": 50,\n  \"emailNotifications\": true,\n  \"pushNotifications\": false,\n  \"profileVisibility\": \"public\",\n  \"showEmail\": false,\n  \"defaultDifficulty\": \"medium\",\n  \"autoSaveProgress\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/settings",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "settings"]
+						},
+						"description": "Update user settings"
+					},
+					"response": []
+				},
+				{
+					"name": "Reset Settings",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/settings/reset",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "settings", "reset"]
+						},
+						"description": "Reset settings to defaults"
+					},
+					"response": []
+				}
+			],
+			"description": "User settings endpoints"
+		},
+		{
+			"name": "Progress",
+			"item": [
+				{
+					"name": "Get User Progress",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/progress",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "progress"]
+						},
+						"description": "Get all user progress"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Level Progress",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/progress/level/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "progress", "level", "1"]
+						},
+						"description": "Get progress for a specific level"
+					},
+					"response": []
+				},
+				{
+					"name": "Complete Mission",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"levelId\": 1,\n  \"missionIndex\": 0,\n  \"xpEarned\": 100,\n  \"stabilityEarned\": 10,\n  \"isReplay\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/progress/mission/complete",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "progress", "mission", "complete"]
+						},
+						"description": "Complete a mission"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Stats",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"xp\": 500,\n  \"stability\": {\n    \"1\": 50,\n    \"2\": 30\n  },\n  \"missionsCompleted\": 10,\n  \"levelsCompleted\": 2,\n  \"playtimeSeconds\": 3600\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/progress/stats",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "progress", "stats"]
+						},
+						"description": "Update user stats"
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Stats",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/progress/stats",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "progress", "stats"]
+						},
+						"description": "Get user statistics"
+					},
+					"response": []
+				},
+				{
+					"name": "Sync Progress",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"progress\": {},\n  \"stats\": {}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/progress/sync",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "progress", "sync"]
+						},
+						"description": "Sync client progress with server"
+					},
+					"response": []
+				}
+			],
+			"description": "User progress endpoints"
+		},
+		{
+			"name": "Privacy & Terms",
+			"item": [
+				{
+					"name": "Get Privacy Policy",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/privacy/policy",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "privacy", "policy"]
+						},
+						"description": "Get privacy policy (public)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Terms of Service",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/privacy/terms",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "privacy", "terms"]
+						},
+						"description": "Get terms of service (public)"
+					},
+					"response": []
+				}
+			],
+			"description": "Privacy and terms endpoints"
+		},
+		{
+			"name": "Leaderboard",
+			"item": [
+				{
+					"name": "Get Global Leaderboard",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has success field\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/leaderboard?limit=50&offset=0",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "leaderboard"],
+							"query": [
+								{
+									"key": "limit",
+									"value": "50",
+									"description": "Number of entries to return"
+								},
+								{
+									"key": "offset",
+									"value": "0",
+									"description": "Offset for pagination",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get global leaderboard (public). Supports pagination."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Level Leaderboard",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has success field\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/leaderboard/level/1?limit=50",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "leaderboard", "level", "1"],
+							"query": [
+								{
+									"key": "limit",
+									"value": "50",
+									"description": "Number of entries to return",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get leaderboard for a specific level (public). Level ID: 1-12"
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Rank",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has success field\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/leaderboard/user/{{user_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "leaderboard", "user", "{{user_id}}"]
+						},
+						"description": "Get user's rank (public). Uses user_id from collection variables."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Leaderboard",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 or 201\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+									"});",
+									"",
+									"pm.test(\"Response has success field\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": \"{{user_id}}\",\n  \"score\": 1000,\n  \"levelId\": 1,\n  \"xp\": 500\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/leaderboard/update",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "leaderboard", "update"]
+						},
+						"description": "Update leaderboard (system endpoint)"
+					},
+					"response": []
+				}
+			],
+			"description": "Leaderboard endpoints"
+		},
+		{
+			"name": "Achievements",
+			"item": [
+				{
+					"name": "Get User Achievements",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has success field\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/achievements",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "achievements"]
+						},
+						"description": "Get current user's achievements"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Achievements",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has success field\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/achievements/list",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "achievements", "list"]
+						},
+						"description": "Get all available achievements"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Achievement by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data._id) {",
+									"        pm.collectionVariables.set('achievement_id', response.data._id);",
+									"        console.log('✅ Achievement ID saved:', response.data._id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/achievements/{{achievement_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "achievements", "{{achievement_id}}"]
+						},
+						"description": "Get achievement details by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Unlock Achievement",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 or 201\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+									"});",
+									"",
+									"pm.test(\"Response has success field\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"achievementId\": \"{{achievement_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/achievements/unlock",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "achievements", "unlock"]
+						},
+						"description": "Unlock an achievement"
+					},
+					"response": []
+				}
+			],
+			"description": "Achievement endpoints"
+		},
+		{
+			"name": "Analytics",
+			"item": [
+				{
+					"name": "Log Event",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 or 201\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+									"});",
+									"",
+									"pm.test(\"Response has success field\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"eventType\": \"level_complete\",\n  \"eventData\": {\n    \"levelId\": 1,\n    \"score\": 100\n  }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/analytics/event",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "analytics", "event"]
+						},
+						"description": "Log an analytics event"
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Events",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has success field\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/analytics/events?limit=100&startDate=&endDate=",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "analytics", "events"],
+							"query": [
+								{
+									"key": "limit",
+									"value": "100",
+									"description": "Maximum number of events to return"
+								},
+								{
+									"key": "startDate",
+									"value": "",
+									"description": "Start date filter (ISO format)",
+									"disabled": true
+								},
+								{
+									"key": "endDate",
+									"value": "",
+									"description": "End date filter (ISO format)",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get current user's analytics events. Supports date filtering and pagination."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Events by Type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has success field\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/analytics/events/level_complete",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "analytics", "events", "level_complete"]
+						},
+						"description": "Get events by type. Common types: level_complete, mission_complete, challenge_complete, achievement_unlocked"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Analytics Stats (Admin)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has success field\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/analytics/stats",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "analytics", "stats"]
+						},
+						"description": "Get analytics statistics (admin only)"
+					},
+					"response": []
+				}
+			],
+			"description": "Analytics endpoints"
+		},
+		{
+			"name": "Game Config",
+			"item": [
+				{
+					"name": "Get Game Configs",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has success field\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/game-config",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "game-config"]
+						},
+						"description": "Get all game configurations (public)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Game Config by Type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has success field\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/game-config/SQL",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "game-config", "SQL"]
+						},
+						"description": "Get game configuration by game type (public). Valid types: SQL, JAVA, C++, PYTHON, JAVASCRIPT, AI, ML"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Game Config (Admin)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data._id) {",
+									"        pm.collectionVariables.set('config_id', response.data._id);",
+									"        console.log('✅ Config ID saved:', response.data._id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"gametype\": \"SQL\",\n  \"config\": {}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/game-config",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "game-config"]
+						},
+						"description": "Create game configuration (admin only). Config ID is auto-saved."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Game Config (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"config\": {}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/game-config/{{config_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "game-config", "{{config_id}}"]
+						},
+						"description": "Update game configuration (admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Game Config (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/game-config/{{config_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "game-config", "{{config_id}}"]
+						},
+						"description": "Delete game configuration (admin only)"
+					},
+					"response": []
+				}
+			],
+			"description": "Game configuration endpoints"
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3001",
+			"type": "string"
+		},
+		{
+			"key": "access_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "refresh_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "user_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "admin_access_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "admin_refresh_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "admin_user_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "challenge_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "question_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "friend_user_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "request_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "friend_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "room_code",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "achievement_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "config_id",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Global pre-request script: Auto-add Bearer token to authenticated requests",
+					"const token = pm.collectionVariables.get('access_token');",
+					"const currentUrl = pm.request.url.toString();",
+					"const method = pm.request.method;",
+					"",
+					"// Define public endpoints that don't require authentication",
+					"// Format: { path: string, methods: string[] } or { path: string, methods: ['GET', 'POST', ...] }",
+					"const publicEndpoints = [",
+					"    // System endpoints",
+					"    { path: '/api/health', methods: ['GET'] },",
+					"    { path: '/api/info', methods: ['GET'] },",
+					"    // Auth endpoints (public)",
+					"    { path: '/api/v1/auth/register', methods: ['POST'] },",
+					"    { path: '/api/v1/auth/login', methods: ['POST'] },",
+					"    { path: '/api/v1/auth/refresh', methods: ['POST'] },",
+					"    // Privacy endpoint",
+					"    { path: '/api/v1/privacy', methods: ['GET'] },",
+					"    // Questions - GET is public, POST /verify requires auth",
+					"    { path: '/api/v1/questions', methods: ['GET'] },",
+					"    // Challenges - GET is public, POST/PUT/DELETE require auth",
+					"    { path: '/api/v1/challenges', methods: ['GET'] },",
+					"    // Leaderboard - GET is public, POST requires auth",
+					"    { path: '/api/v1/leaderboard', methods: ['GET'] },",
+					"    // Game config - GET is public",
+					"    { path: '/api/v1/game-config', methods: ['GET'] },",
+					"    // Execution - GET languages is public",
+					"    { path: '/api/v1/execute/languages', methods: ['GET'] }",
+					"];",
+					"",
+					"// Check if this is a public endpoint",
+					"let isPublic = false;",
+					"for (let endpoint of publicEndpoints) {",
+					"    // Check if URL matches the path (exact or starts with for dynamic routes)",
+					"    const urlMatches = currentUrl.includes(endpoint.path) || currentUrl.startsWith(endpoint.path + '/') || currentUrl.startsWith(endpoint.path + '?');",
+					"    // Check if method is allowed",
+					"    const methodMatches = endpoint.methods.includes(method);",
+					"    ",
+					"    // Special handling for dynamic routes",
+					"    if (endpoint.path === '/api/v1/questions' && urlMatches && methodMatches) {",
+					"        // GET /questions, /questions/:id, /questions/random, /questions/topic/:topic are public",
+					"        // But POST /questions/:id/verify requires auth",
+					"        if (!currentUrl.includes('/verify')) {",
+					"            isPublic = true;",
+					"            break;",
+					"        }",
+					"    } else if (endpoint.path === '/api/v1/challenges' && urlMatches && methodMatches) {",
+					"        // GET /challenges, /challenges/:id, /challenges/room/:code, /challenges/:id/leaderboard are public",
+					"        // But POST/PUT/DELETE require auth",
+					"        isPublic = true;",
+					"        break;",
+					"    } else if (endpoint.path === '/api/v1/leaderboard' && urlMatches && methodMatches) {",
+					"        // GET /leaderboard, /leaderboard/level/:id, /leaderboard/user/:id are public",
+					"        // But POST /leaderboard/update requires auth",
+					"        if (!currentUrl.includes('/update')) {",
+					"            isPublic = true;",
+					"            break;",
+					"        }",
+					"    } else if (urlMatches && methodMatches) {",
+					"        isPublic = true;",
+					"        break;",
+					"    }",
+					"}",
+					"",
+					"// Remove any existing Authorization header first (to ensure fresh token)",
+					"pm.request.headers.remove('Authorization');",
+					"",
+					"// Add Bearer token automatically if available and not a public endpoint",
+					"if (token && token.trim() !== '' && !isPublic) {",
+					"    pm.request.headers.add({",
+					"        key: 'Authorization',",
+					"        value: 'Bearer ' + token",
+					"    });",
+					"    console.log('✅ Authorization token added automatically to ' + method + ' ' + currentUrl);",
+					"} else if (!token && !isPublic) {",
+					"    console.log('⚠️  No token available for ' + method + ' ' + currentUrl + '. Please login or register first.');",
+					"} else if (isPublic) {",
+					"    console.log('ℹ️  Public endpoint - no token required: ' + method + ' ' + currentUrl);",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Global test script: Basic response validation and auto token refresh",
+					"pm.test(\"Response time is less than 5000ms\", function () {",
+					"    pm.expect(pm.response.responseTime).to.be.below(5000);",
+					"});",
+					"",
+					"// Auto-refresh token if we get 401 Unauthorized",
+					"if (pm.response.code === 401) {",
+					"    const refreshToken = pm.collectionVariables.get('refresh_token');",
+					"    if (refreshToken && refreshToken.trim() !== '') {",
+					"        console.log('🔄 Token expired. Attempting to refresh...');",
+					"        ",
+					"        // Call refresh token endpoint",
+					"        pm.sendRequest({",
+					"            url: pm.collectionVariables.get('base_url') + '/api/v1/auth/refresh',",
+					"            method: 'POST',",
+					"            header: {",
+					"                'Content-Type': 'application/json'",
+					"            },",
+					"            body: {",
+					"                mode: 'raw',",
+					"                raw: JSON.stringify({ refreshToken: refreshToken })",
+					"            }",
+					"        }, function (err, res) {",
+					"            if (!err && res.code === 200) {",
+					"                try {",
+					"                    const response = res.json();",
+					"                    if (response.success && response.data) {",
+					"                        // Save new access token",
+					"                        if (response.data.accessToken) {",
+					"                            pm.collectionVariables.set('access_token', response.data.accessToken);",
+					"                            console.log('✅ Access token refreshed automatically');",
+					"                        }",
+					"                        // Save new refresh token if provided",
+					"                        if (response.data.refreshToken) {",
+					"                            pm.collectionVariables.set('refresh_token', response.data.refreshToken);",
+					"                            console.log('✅ Refresh token updated automatically');",
+					"                        }",
+					"                        console.log('✅ Token refreshed. Please retry the request.');",
+					"                    }",
+					"                } catch (error) {",
+					"                    console.log('❌ Error parsing refresh response:', error.message);",
+					"                }",
+					"            } else {",
+					"                console.log('❌ Token refresh failed. Please login again.');",
+					"            }",
+					"        });",
+					"    } else {",
+					"        console.log('⚠️  No refresh token available. Please login again.');",
+					"    }",
+					"}",
+					"",
+					"// Log response for debugging",
+					"if (pm.response.code >= 400) {",
+					"    console.log('Error Response:', pm.response.text());",
+					"}"
+				]
+			}
+		}
+	]
+}
+

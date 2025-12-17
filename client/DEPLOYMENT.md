@@ -10,6 +10,10 @@ This guide will help you deploy the Reality Patch: SQL game to Render.
 
 ## Quick Deploy (Using render.yaml)
 
+**Note:** For Render's Blueprint feature to automatically detect `render.yaml`, it should be in the repository root. If `render.yaml` is in the `client/` folder, you'll need to either:
+- Move `render.yaml` to the repository root and add `rootDirectory: client` to it, OR
+- Use the Manual Setup option below and specify `client` as the Root Directory
+
 1. **Push your code to Git**
    ```bash
    git add .
@@ -21,7 +25,7 @@ This guide will help you deploy the Reality Patch: SQL game to Render.
    - Go to https://dashboard.render.com
    - Click "New +" → "Blueprint"
    - Connect your Git repository
-   - Render will automatically detect `render.yaml` and configure everything
+   - Render will automatically detect `render.yaml` and configure everything (if it's in the repo root)
 
 3. **Wait for deployment**
    - Render will build and deploy your app
@@ -44,7 +48,7 @@ If you prefer to set up manually:
    - **Environment**: `Node`
    - **Region**: Choose closest to your users
    - **Branch**: `main` (or your default branch)
-   - **Root Directory**: Leave empty (or set if your app is in a subdirectory)
+   - **Root Directory**: `client` (important: set this to `client` since the client code is in the client subdirectory)
    - **Build Command**: `npm install && npm run build`
    - **Start Command**: `npm start`
    - **Plan**: Free tier is available
@@ -75,10 +79,11 @@ If you prefer to set up manually:
 - Check that all dependencies are in `package.json`
 - Verify Node.js version (Render uses Node 18+ by default)
 - Check build logs in Render dashboard
+- Ensure `rootDirectory: client` is set in `render.yaml` if deploying from repository root
 
 ### App Doesn't Load
 - Verify `dist/` folder is created during build
-- Check that `server.js` is in the root directory
+- Check that `server.js` is in the `client/` directory
 - Ensure `start` script is in `package.json`
 
 ### Routing Issues
